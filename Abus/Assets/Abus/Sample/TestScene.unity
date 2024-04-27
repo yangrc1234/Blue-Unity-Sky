@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 0.031577904
   m_AmbientMode: 4
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 1955795789}
+  m_SkyboxMaterial: {fileID: 965864413}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.009250328, g: 0.01252389, b: 0.019693358, a: 1}
+  m_IndirectSpecularColor: {r: 0.00943438, g: 0.012722735, b: 0.019964833, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -223,7 +223,7 @@ Transform:
   m_GameObject: {fileID: 9738210}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.03, y: 1.81, z: 1.4694233}
+  m_LocalPosition: {x: -3.03, y: 1.9599999, z: 1.4694233}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -288,30 +288,30 @@ MonoBehaviour:
   UtilShaders: {fileID: 7200000, guid: bb8c2499d4c54dce81efe637326383e7, type: 3}
   SceneLightingCS: {fileID: 7200000, guid: f69da212ebe242c398bdca44550a5844, type: 3}
   numWavelengths: 16
-  SunDiscIrradiance: {x: 0.013920881, y: 0.0009357935, z: -0.000351365}
+  SunDiscIrradiance: {x: 0.016097806, y: 0.0011438135, z: -0.00040946377}
   SkyIrradiance:
-    sh[ 0]: 0.009250328
-    sh[ 1]: 0.005716475
-    sh[ 2]: 0.00088932004
-    sh[ 3]: -0.00016243875
+    sh[ 0]: 0.00943438
+    sh[ 1]: 0.0058206907
+    sh[ 2]: 0.0009370045
+    sh[ 3]: -0.00016952044
     sh[ 4]: 0
     sh[ 5]: 0
     sh[ 6]: 0
     sh[ 7]: 0
     sh[ 8]: 0
-    sh[ 9]: 0.01252389
-    sh[10]: 0.009112969
-    sh[11]: 0.00054564315
-    sh[12]: -0.00009980322
+    sh[ 9]: 0.012722735
+    sh[10]: 0.0092496965
+    sh[11]: 0.0005525713
+    sh[12]: -0.000100621364
     sh[13]: 0
     sh[14]: 0
     sh[15]: 0
     sh[16]: 0
     sh[17]: 0
-    sh[18]: 0.019693358
-    sh[19]: 0.016551841
-    sh[20]: 0.000445058
-    sh[21]: -0.000036963545
+    sh[18]: 0.019964833
+    sh[19]: 0.016776003
+    sh[20]: 0.00043581828
+    sh[21]: -0.000035534507
     sh[22]: 0
     sh[23]: 0
     sh[24]: 0
@@ -448,8 +448,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.06722229, b: -0.02524014, a: 1}
-  m_Intensity: 0.013920881
+  m_Color: {r: 1, g: 0.071054, b: -0.025435997, a: 1}
+  m_Intensity: 0.016097806
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -507,13 +507,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 180836268}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.9520148, y: 0.29727638, z: 0.068105504, w: 0.025616616}
+  m_LocalRotation: {x: 0.9520057, y: 0.29730058, z: 0.06800058, w: 0.025952753}
   m_LocalPosition: {x: 1.75, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 179.525, y: -8.332001, z: -34.718018}
+  m_LocalEulerAnglesHint: {x: 179.485, y: -8.332001, z: -34.723022}
 --- !u!114 &180836271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -537,6 +537,37 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!21 &965864413
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Unlit/AbusSampleSkybox
+  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats: []
+    m_Colors: []
+  m_BuildTextureStacks: []
 --- !u!1 &1005276337
 GameObject:
   m_ObjectHideFlags: 0
@@ -550,7 +581,7 @@ GameObject:
   - component: {fileID: 1005276339}
   - component: {fileID: 1005276338}
   m_Layer: 0
-  m_Name: w
+  m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -636,7 +667,7 @@ Transform:
   m_GameObject: {fileID: 1005276337}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.79, y: -0.69, z: -4.1}
+  m_LocalPosition: {x: -1.79, y: -0.54, z: -4.1}
   m_LocalScale: {x: 33.799343, y: 1.2437129, z: 33.103455}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -741,7 +772,7 @@ Transform:
   m_GameObject: {fileID: 1292811484}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.65, y: 1.81, z: 1.4694233}
+  m_LocalPosition: {x: -5.65, y: 1.9599999, z: 1.4694233}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -980,37 +1011,6 @@ MonoBehaviour:
   blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 11400000, guid: 1a966e92fc9a405409fc615e3ecc3ecd, type: 2}
---- !u!21 &1955795789
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Unlit/AbusSampleSkybox
-  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats: []
-    m_Colors: []
-  m_BuildTextureStacks: []
 --- !u!1 &1979535111
 GameObject:
   m_ObjectHideFlags: 0
@@ -1110,7 +1110,7 @@ Transform:
   m_GameObject: {fileID: 1979535111}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00022093487, y: -0.00081416476, z: 0.0028267915, w: 0.99999565}
-  m_LocalPosition: {x: -0.4, y: 1.81, z: 1.4694233}
+  m_LocalPosition: {x: -0.4, y: 1.9599999, z: 1.4694233}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []

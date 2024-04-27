@@ -1,33 +1,40 @@
-# ABUS - A Better Unity Sky
-An open-source physically based ATMOSPHERE SYSTEM for Unity!
+# ABUS - A Blue Unity Sky  
 
-ABUS aims to deliver a NEXT-GEN atmosphere system for realistic Unity game.
-- Physically based stunning visual 
-- Shippable performance 
-- Artist-friendly UX  
+![See the banding around sun? I'm still trying to fix it:)](./Docs/1.png)
+![](./Docs/2.png)
 
-> WARNING: This project is in very early prototype stage.   
-> It means:  
-> 1. Iterated inside a URP project but not package, for my convenience.  
-> 2. Things will change very often.  
-> 3. Some code might be totally wrong.  
+(Currently) ABUS is my prototype project, tries to find the solution towards NEXT-GEN atmosphere rendering.    
+The targets include:  
+- High Quality Visual 
+  - Based on **Spectrum Rendering** 
+  - And **Realistic Atmosphere Modeling**
+- Runtime Parameter Update
+  - No offline baking etc.  
+- Shippable Performance   
+- Artist-Friendly UX
 
-## Features  
+Features in this project are heavily inspired by [Suzuki23]. It's an awesome talk!    
 
+## Current Features  
 - Atmosphere modeling  
   - Air molecule(Rayleigh)  
-  - Ozone  
+  - Ozone
   - Aerosol(Mie)
+  - Data based on previous work/real-world data
 - Atmosphere rendering
-  - Multiple-Scattering Approximation 
-  - Spectrum rendering  
-    - Use binned spectrum to render accurate sky color
+  - Spectrum rendering
+  - Multiple-Scattering Approximation Based on [Hillaire20]
 
-### WIP Features
-These are features in WIP state.  
+## WIP
+These are features currently be worked on.  
 
-- Scene integrations
-  - Scene Lighting
-  - Aerial Perspective
-- Aerosol authoring optimization
-- Profiling and Optimization
+- Scene Aerial Perspective  
+- Profiling and Optimization Plan  
+  - Figure out best LUT sizes, wavelength parameters etc.  
+- Adaptive Sampling  
+
+
+## References
+- [Suzuki23] Realistic Real-time Sky Dome Rendering in Gran Turismo 7
+- [BASM98] Optical Properties of Aerosols and Clouds: The Software Package OPAC  
+- [Hillaire20] A Scalable and Production Ready Sky and Atmosphere Rendering Technique  
