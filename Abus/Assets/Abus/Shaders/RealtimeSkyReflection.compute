@@ -1,5 +1,7 @@
 ﻿#pragma kernel MainCS
 
+// This shader is for calculating realtime reflection info from sky texture.
+
 #define TRANSMITTANCE_READABLE 1
 #define SKYVIEW_READABLE 1
 
@@ -154,9 +156,9 @@ float CalculateRadianceTransferMask(float3 ViewDirection)
 
 struct FThreeBandSHVector
 {
-    half4 V0;
-    half4 V1;
-    half V2;
+    float4 V0;
+    float4 V1;
+    float V2;
 };
 
 FThreeBandSHVector SHBasisFunction3(half3 InputVector)
@@ -180,7 +182,7 @@ FThreeBandSHVector SHBasisFunction3(half3 InputVector)
     return Result;
 }
 
-FThreeBandSHVector MulSH3(FThreeBandSHVector A, half Scalar)
+FThreeBandSHVector MulSH3(FThreeBandSHVector A, float Scalar)
 {
     FThreeBandSHVector Result;
     Result.V0 = A.V0 * Scalar;
@@ -247,7 +249,7 @@ void MainCS(uint3 id : SV_DispatchThreadID)
         float4 SampledSkyRadiance = GetSkyView(SkySample.xyz) / PDF;
 
         // Convert to SRGB first.
-        const float3 RGBColor = ColorConvertToSRGB(SampledSkyRadiance);
+        const float3 RGBColor = ColorConvertToSRGB(SampledSkyRadiance) * dWaveLength / (2.0f * PI);
 
         // Calculate SH for R,G,B
         for (int iBand = 0; iBand < 3; iBand++)
@@ -258,6 +260,10 @@ void MainCS(uint3 id : SV_DispatchThreadID)
             Projected.V0 = SumColor(id.x, Projected.V0) / THREAD_NUM;
             Projected.V1 = SumColor(id.x, Projected.V1) / THREAD_NUM;
             Projected.V2 = SumScalar(id.x, Projected.V2) / THREAD_NUM;
+
+            // Projected = MulSH3(TestSHBasis, 1.0f);
+            // Projected.V0 = 0.0f;
+            Projected.V1 = Projected.V2 = 0.0f; // Failed to get this right... Something I missed about unity SH.
 
             if (id.x == 0)
             {
