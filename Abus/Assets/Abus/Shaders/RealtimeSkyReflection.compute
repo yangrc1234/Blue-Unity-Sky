@@ -1,0 +1,296 @@
+﻿#pragma kernel MainCS
+
+#define TRANSMITTANCE_READABLE 1
+#define SKYVIEW_READABLE 1
+
+#include "LutCommon.cginc"
+
+// Returns a point on the unit circle and a radius in z
+float3 ConcentricDiskSamplingHelper(float2 E)
+{
+    // Rescale input from [0,1) to (-1,1). This ensures the output radius is in [0,1)
+    float2 p = 2 * E - 0.99999994;
+    float2 a = abs(p);
+    float Lo = min(a.x, a.y);
+    float Hi = max(a.x, a.y);
+    float Epsilon = 5.42101086243e-20; // 2^-64 (this avoids 0/0 without changing the rest of the mapping)
+    float Phi = (PI / 4) * (Lo / (Hi + Epsilon) + 2 * float(a.y >= a.x));
+    float Radius = Hi;
+    // copy sign bits from p
+    const uint SignMask = 0x80000000;
+    float2 Disk = asfloat((asuint(float2(cos(Phi), sin(Phi))) & ~SignMask) | (asuint(p) & SignMask));
+    // return point on the circle as well as the radius
+    return float3(Disk, Radius);
+}
+
+// http://extremelearning.com.au/a-simple-method-to-construct-isotropic-quasirandom-blue-noise-point-sequences/
+float2 R2Sequence( uint Index )
+{
+    const float Phi = 1.324717957244746;
+    const float2 a = float2( 1.0 / Phi, 1.0 / POW2(Phi) );
+    return frac( a * Index );
+}
+
+// Same as the function above, but uses a concentric mapping
+float4 UniformSampleConeConcentricRobust(float2 E, float SinThetaMax2)
+{
+    // The expression 1-sqrt(1-x) is susceptible to catastrophic cancelation.
+    // Instead, use a series expansion about 0 which is accurate within 10^-7
+    // and much more numerically stable.
+    float OneMinusCosThetaMax = SinThetaMax2 < 0.01 ? SinThetaMax2 * (0.5 + 0.125 * SinThetaMax2) : 1 - sqrt(1 - SinThetaMax2);
+    float3 Result = ConcentricDiskSamplingHelper(E);
+    float SinTheta = Result.z * sqrt(SinThetaMax2);
+    float CosTheta = sqrt(1 - SinTheta * SinTheta);
+
+    float3 L = float3(Result.xy * SinTheta, CosTheta);
+    float PDF = 1.0 / (2 * PI * OneMinusCosThetaMax);
+
+    return float4(L, PDF);
+}
+
+// [ Duff et al. 2017, "Building an Orthonormal Basis, Revisited" ]
+// Discontinuity at TangentZ.z == 0
+float3x3 GetTangentBasis( float3 TangentZ )
+{
+    const float Sign = TangentZ.z >= 0 ? 1 : -1;
+    const float a = -rcp( Sign + TangentZ.z );
+    const float b = TangentZ.x * TangentZ.y * a;
+	
+    float3 TangentX = { 1 + Sign * a * POW2( TangentZ.x ), Sign * b, -Sign * TangentZ.x };
+    float3 TangentY = { b,  Sign + a * POW2( TangentZ.y ), -TangentZ.y };
+
+    return float3x3( TangentX, TangentY, TangentZ );
+}
+
+float3 TangentToWorld( float3 Vec, float3 TangentZ )
+{
+    return mul( Vec, GetTangentBasis( TangentZ ) );
+}
+
+// PDF = 1 / (2 * PI)
+float4 UniformSampleHemisphere( float2 E )
+{
+    float Phi = 2 * PI * E.x;
+    float CosTheta = E.y;
+    float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+
+    float3 H;
+    H.x = SinTheta * cos( Phi );
+    H.y = SinTheta * sin( Phi );
+    H.z = CosTheta;
+
+    float PDF = 1.0 / (2 * PI);
+
+    return float4( H, PDF );
+}
+
+RWStructuredBuffer<float4> OutReadbackBuffer;
+
+#define THREAD_NUM 64
+
+groupshared float SharedRadianceA[THREAD_NUM];
+groupshared float SharedRadianceB[THREAD_NUM];
+groupshared float SharedRadianceC[THREAD_NUM];
+groupshared float SharedRadianceD[THREAD_NUM];
+
+float SumScalar(uint ThreadId, float Radiance)
+{
+    SharedRadianceA[ThreadId] = Radiance;
+    
+    GroupMemoryBarrierWithGroupSync();
+
+    uint AliveThreads = THREAD_NUM / 2;
+    while (AliveThreads >= 1)
+    {
+        if (ThreadId < AliveThreads)
+        {
+            SharedRadianceA[ThreadId] = SharedRadianceA[ThreadId] + SharedRadianceA[ThreadId + AliveThreads];
+        }
+        AliveThreads >>= 1;
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    return SharedRadianceA[0];
+}
+
+float4 SumColor(uint ThreadId, float4 Radiance)
+{
+    SharedRadianceA[ThreadId] = Radiance.x;
+    SharedRadianceB[ThreadId] = Radiance.y;
+    SharedRadianceC[ThreadId] = Radiance.z;
+    SharedRadianceD[ThreadId] = Radiance.w;
+    
+    GroupMemoryBarrierWithGroupSync();
+
+    uint AliveThreads = THREAD_NUM / 2;
+    while (AliveThreads >= 1)
+    {
+        if (ThreadId < AliveThreads)
+        {
+            SharedRadianceA[ThreadId] = SharedRadianceA[ThreadId] + SharedRadianceA[ThreadId + AliveThreads];
+            SharedRadianceB[ThreadId] = SharedRadianceB[ThreadId] + SharedRadianceB[ThreadId + AliveThreads];
+            SharedRadianceC[ThreadId] = SharedRadianceC[ThreadId] + SharedRadianceC[ThreadId + AliveThreads];
+            SharedRadianceD[ThreadId] = SharedRadianceD[ThreadId] + SharedRadianceD[ThreadId + AliveThreads];
+        }
+        AliveThreads >>= 1;
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    return float4(SharedRadianceA[0], SharedRadianceB[0], SharedRadianceC[0], SharedRadianceD[0]);
+}
+
+float CalculateRadianceTransferMask(float3 ViewDirection)
+{
+    // Calculate a mask for whole sky,
+    // The mask is centered at sun direction,
+    // For radiance inside this mask, we will transfer its radiance to directional light.
+    const float SunFocusMaskEnd = SunFocusAngle;  // Outer of the mask
+    const float SunFocusMaskStart = max(0.0f, SunFocusAngle - DegToRad(1.0f)); // Inner of the mask. hard code the fade area to 1.0 degrees for now.
+    const float CurrentSunFocusPosition = FastACos(dot(ViewDirection, AtmosphereLightDirection));
+    // Mask of "how much radiance should be transferred to directional light, if overflowed".
+    const float TransferMask = 1.0f - saturate((CurrentSunFocusPosition - SunFocusMaskStart) / (SunFocusMaskEnd - SunFocusMaskStart));
+    return TransferMask;
+}
+
+struct FThreeBandSHVector
+{
+    half4 V0;
+    half4 V1;
+    half V2;
+};
+
+FThreeBandSHVector SHBasisFunction3(half3 InputVector)
+{
+    InputVector = float3(-InputVector.x, -InputVector.y, InputVector.z);
+    
+    FThreeBandSHVector Result;
+    // These are derived from simplifying SHBasisFunction in C++
+    Result.V0.x = 0.282095f; 
+    Result.V0.y = -0.488603f * InputVector.y;
+    Result.V0.z = 0.488603f * InputVector.z;
+    Result.V0.w = -0.488603f * InputVector.x;
+
+    half3 VectorSquared = InputVector * InputVector;
+    Result.V1.x = 1.092548f * InputVector.x * InputVector.y;
+    Result.V1.y = -1.092548f * InputVector.y * InputVector.z;
+    Result.V1.z = 0.315392f * (3.0f * VectorSquared.z - 1.0f);
+    Result.V1.w = -1.092548f * InputVector.x * InputVector.z;
+    Result.V2 = 0.546274f * (VectorSquared.x - VectorSquared.y);
+
+    return Result;
+}
+
+FThreeBandSHVector MulSH3(FThreeBandSHVector A, half Scalar)
+{
+    FThreeBandSHVector Result;
+    Result.V0 = A.V0 * Scalar;
+    Result.V1 = A.V1 * Scalar;
+    Result.V2 = A.V2 * Scalar;
+    return Result;
+}
+
+FThreeBandSHVector AddSH(FThreeBandSHVector A, FThreeBandSHVector B)
+{
+    FThreeBandSHVector Result = A;
+    Result.V0 += B.V0;
+    Result.V1 += B.V1;
+    Result.V2 += B.V2;
+    return Result;
+}
+
+#define READBACK_BUFFER_SIZE 10  //0 - 8 for RGB SH Coefficients, 9 for directional light.
+
+void StoreSHCoefficient(FThreeBandSHVector Sum, RWStructuredBuffer<float4> OutBuffer, int Band)
+{
+    OutBuffer[Band * 3 + 0] += float4(Sum.V0.x, Sum.V0.y, Sum.V0.z, Sum.V0.w);
+    OutBuffer[Band * 3 + 1] += float4(Sum.V1.x, Sum.V1.y, Sum.V1.z, Sum.V1.w);
+    OutBuffer[Band * 3 + 2] += float4(Sum.V2, 0.0f, 0.0f, 0.0f);
+}
+
+void StoreDirectionalLight(float3 Color, RWStructuredBuffer<float4> OutBuffer)
+{
+    OutBuffer[9].rgb += Color;
+}
+
+// This shader is for "calculating" a suitable in-scene directional/sky light color.
+// Same rays as group size are dispatched, then radiance is accumulated.
+// Sun disc is processed as well.
+// Only dispatch 1 group, and use group memory barrier to reduce.
+[numthreads(THREAD_NUM, 1, 1)]
+void MainCS(uint3 id : SV_DispatchThreadID)
+{
+    // Calculate scene lighting parameters based on our LUTs.
+    // This assume scene lighting is composed of directional light and skylight(ambient) part.
+    // Most common method is to calculate transmittance towards the sun as directional light,
+    // Then integrate(or project onto spherical harmonics) over sky view LUT as skylight value.
+    //
+    // This method has a major flaw, when the sky contains strong mie forward scattering, it will greatly affect skylight intensity, causing somewhat light leaking result on those receive-ambient-only surface.
+    //
+    // To solve this, here we try a new method, regard radiance around the sun as part of directional light.
+    // This gives a more "correct" directional light intensity, also reduce the skylight light leaking problem.
+    //
+    // To achieve this, we first process skylight, to see the average value of skylight,
+    // Then, for sky area around the sun, if the radiance is bigger than this average value, we think the "overflow" part belongs to the directional light.
+    
+    float2 Random = R2Sequence(id.x);
+
+    // Sky irradiance map.
+    float4 AverageSkyRadiance;
+    float4 TransferThreshold;
+    {
+        float4 SkySample = UniformSampleHemisphere(Random).xzyw;
+
+        FThreeBandSHVector SHBasis = SHBasisFunction3(SkySample.xyz);
+
+        const float PDF = SkySample.w;
+
+        float4 SampledSkyRadiance = GetSkyView(SkySample.xyz) / PDF;
+
+        // Convert to SRGB first.
+        const float3 RGBColor = ColorConvertToSRGB(SampledSkyRadiance);
+
+        // Calculate SH for R,G,B
+        for (int iBand = 0; iBand < 3; iBand++)
+        {
+            FThreeBandSHVector Projected = MulSH3(SHBasis, RGBColor[iBand]);
+
+            // Sum across all threads.
+            Projected.V0 = SumColor(id.x, Projected.V0) / THREAD_NUM;
+            Projected.V1 = SumColor(id.x, Projected.V1) / THREAD_NUM;
+            Projected.V2 = SumScalar(id.x, Projected.V2) / THREAD_NUM;
+
+            if (id.x == 0)
+            {
+                StoreSHCoefficient(Projected, OutReadbackBuffer, iBand);
+            }
+        }
+    }
+    
+    // Sun disc(direct lighting) intensity.
+    {
+        float SunSin2 = 1.0f - CosSunDiscHalfAngle * CosSunDiscHalfAngle;
+        float4 ConeSample = UniformSampleConeConcentricRobust(Random, SunSin2);
+
+        const float PDF = ConeSample.w;
+        float3 SampleWorldDir = TangentToWorld(ConeSample.xyz, AtmosphereLightDirection);
+
+        const float mu = dot(SampleWorldDir, float3(0.0f, 1.0f, 0.0f));
+        float4 SunColor = CurrentIteratingSunRadiance * GetTransmittance(GroundHeight, mu) * (RayIntersectsGround(GroundHeight, mu) ? 0.0f : 1.0f);
+
+        float4 SumResult = SumColor(id.x, max(0.0f, SunColor) / PDF) / THREAD_NUM;
+
+        if (id.x == 0)
+        {
+            StoreDirectionalLight(dWaveLength * ColorConvertToSRGB(SumResult), OutReadbackBuffer);
+        }
+    }
+}
+
+#pragma kernel ClearCS
+
+[numthreads(32, 1, 1)]
+void ClearCS(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x < READBACK_BUFFER_SIZE)
+        OutReadbackBuffer[id.x] = 0.0f;
+}
