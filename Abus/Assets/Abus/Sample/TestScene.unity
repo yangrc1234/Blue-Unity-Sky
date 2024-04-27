@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 0.031577904
   m_AmbientMode: 4
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 576384697}
+  m_SkyboxMaterial: {fileID: 1955795789}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.16391443, g: 0.15170066, b: 0.23077093, a: 1}
+  m_IndirectSpecularColor: {r: 0.009250328, g: 0.01252389, b: 0.019693358, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -279,7 +279,7 @@ MonoBehaviour:
   lutHeightBoundary: 100
   skyViewLutSize: {x: 64, y: 96}
   sunFocusLutSize: {x: 32, y: 32}
-  transmittanceTextureSize: {x: 32, y: 128}
+  transmittanceTextureSize: {x: 128, y: 128}
   multipleScatteringTextureSize: {x: 32, y: 32}
   TransmittanceCS: {fileID: 7200000, guid: bd000332b49fbb94b907a0db5d16e7b3, type: 3}
   MultipleScatteringCS: {fileID: 7200000, guid: 4f2029dc6ccc42c79d8523b075064198,
@@ -288,36 +288,35 @@ MonoBehaviour:
   UtilShaders: {fileID: 7200000, guid: bb8c2499d4c54dce81efe637326383e7, type: 3}
   SceneLightingCS: {fileID: 7200000, guid: f69da212ebe242c398bdca44550a5844, type: 3}
   numWavelengths: 16
-  SunDiscIrradiance: {x: 21.691732, y: 14.312834, z: 10.99691}
+  SunDiscIrradiance: {x: 0.013920881, y: 0.0009357935, z: -0.000351365}
   SkyIrradiance:
-    sh[ 0]: 0.16391447
-    sh[ 1]: 0.09474546
-    sh[ 2]: 0.030848598
-    sh[ 3]: 0.003543676
+    sh[ 0]: 0.009250328
+    sh[ 1]: 0.005716475
+    sh[ 2]: 0.00088932004
+    sh[ 3]: -0.00016243875
     sh[ 4]: 0
     sh[ 5]: 0
     sh[ 6]: 0
     sh[ 7]: 0
     sh[ 8]: 0
-    sh[ 9]: 0.1517004
-    sh[10]: 0.090841085
-    sh[11]: 0.020334642
-    sh[12]: 0.0027675563
+    sh[ 9]: 0.01252389
+    sh[10]: 0.009112969
+    sh[11]: 0.00054564315
+    sh[12]: -0.00009980322
     sh[13]: 0
     sh[14]: 0
     sh[15]: 0
     sh[16]: 0
     sh[17]: 0
-    sh[18]: 0.2307709
-    sh[19]: 0.15461245
-    sh[20]: 0.01647496
-    sh[21]: 0.0027066953
+    sh[18]: 0.019693358
+    sh[19]: 0.016551841
+    sh[20]: 0.000445058
+    sh[21]: -0.000036963545
     sh[22]: 0
     sh[23]: 0
     sh[24]: 0
     sh[25]: 0
     sh[26]: 0
-  radiusBin: 1
 --- !u!114 &134787725
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -349,7 +348,7 @@ MonoBehaviour:
       imag: -0.008
     radiusUm: 2.5623977
     radiusGeometricDeviation: 2.51
-    geometryCrossSection: 0.0037129193
+    geometryCrossSection: 0.008250931
     PBLThickness: 2
     scaleHeightKM: 8
     IsTransported: 0
@@ -358,18 +357,18 @@ MonoBehaviour:
       imag: -0.002
     radiusUm: 0.077851854
     radiusGeometricDeviation: 2.24
-    geometryCrossSection: 0.04950638
+    geometryCrossSection: 0.1332864
     PBLThickness: 2
     scaleHeightKM: 8
     IsTransported: 0
   - RefractiveIndex:
-      real: 1.35
-      imag: -0.00000000298
-    radiusUm: 0.5696166
-    radiusGeometricDeviation: 2.03
-    geometryCrossSection: 0
+      real: 1.75
+      imag: -0.44
+    radiusUm: 0.030845951
+    radiusGeometricDeviation: 2
+    geometryCrossSection: 0.024809862
     PBLThickness: 2
-    scaleHeightKM: 100
+    scaleHeightKM: 8
     IsTransported: 0
   - RefractiveIndex:
       real: 1.75
@@ -403,7 +402,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   OverallIntensity: 1
-  MainProfile: {fileID: 11400000, guid: 867aadc6446de1a45bf4e39435e897f2, type: 2}
+  MainProfile: {fileID: 11400000, guid: c10a92470f8b3204cbd805b930df956e, type: 2}
 --- !u!114 &134787727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -449,8 +448,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.65982896, b: 0.5069632, a: 1}
-  m_Intensity: 21.691732
+  m_Color: {r: 1, g: 0.06722229, b: -0.02524014, a: 1}
+  m_Intensity: 0.013920881
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -508,13 +507,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 180836268}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3790523, y: 0.89918095, z: -0.17288993, w: 0.13379861}
+  m_LocalRotation: {x: 0.9520148, y: 0.29727638, z: 0.068105504, w: 0.025616616}
   m_LocalPosition: {x: 1.75, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 155.647, y: -2886.906, z: 584.224}
+  m_LocalEulerAnglesHint: {x: 179.525, y: -8.332001, z: -34.718018}
 --- !u!114 &180836271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -538,37 +537,6 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
---- !u!21 &576384697
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Unlit/NewUnlitShader
-  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats: []
-    m_Colors: []
-  m_BuildTextureStacks: []
 --- !u!1 &1005276337
 GameObject:
   m_ObjectHideFlags: 0
@@ -1012,6 +980,37 @@ MonoBehaviour:
   blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 11400000, guid: 1a966e92fc9a405409fc615e3ecc3ecd, type: 2}
+--- !u!21 &1955795789
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Unlit/AbusSampleSkybox
+  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats: []
+    m_Colors: []
+  m_BuildTextureStacks: []
 --- !u!1 &1979535111
 GameObject:
   m_ObjectHideFlags: 0

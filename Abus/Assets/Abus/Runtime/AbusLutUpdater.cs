@@ -290,8 +290,6 @@ namespace Abus.Runtime
             return true;
         }
 
-        [Range(1, 10)]
-        public int radiusBin = 5;
         public Texture2D MieWavelengthLut { get; private set; }
         public Texture2D miePropertiesLut { get; private set; }
 
@@ -312,10 +310,16 @@ namespace Abus.Runtime
 
                     double SumExtEfficiency = 0.0, SumScatEfficiency = 0.0, Sumg = 0.0;
                     double SumWeight = 0.0f;
-                    for (int iSmooth = 0; iSmooth < radiusBin; iSmooth++)
+                    
+                    // With small particles, mie scattering could become wavelength-dependent.
+                    // If we just use all-same-radius particle distribution, result will be strongly biased towards a single color.
+                    // So we would calculate mie scattering with multiple sizes and average them, to get a more "smooth" result over wavelength.
+                    const int MieCalculationAverageSample = 3;
+                    
+                    for (int iSmooth = 0; iSmooth < MieCalculationAverageSample; iSmooth++)
                     {
                         // Cover relative size from 0.1 to 10.0.
-                        var relativeSize = Mathf.Exp((iSmooth + 0.5f) / radiusBin - 0.5f);
+                        var relativeSize = Mathf.Exp((iSmooth + 0.5f) / MieCalculationAverageSample - 0.5f);
                         var currentSize = radiusUM * relativeSize;
                         var sizeParameter = 2.0f * Mathf.PI * currentSize / (1e-3f * wavelength);
                         

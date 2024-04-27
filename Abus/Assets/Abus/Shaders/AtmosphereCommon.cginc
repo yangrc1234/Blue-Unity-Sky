@@ -260,7 +260,7 @@ float GetAerosolHeightProfile(float SampleHeight, float PBLDensity, float Thickn
     // The height distribution model from BAMS98 has a step at PBL boundary.
     // We need to do a smooth transition near boundary to avoid artifacts.
 
-    const float FadeMask = saturate((Altitude - Thickness) / 1.5f);
+    const float FadeMask = saturate((Altitude - Thickness) / 2.0f);
     
     return PBLDensity * GetScaleHeight(Altitude - Thickness, ScaleHeight) * (1.0f - FadeMask);
 }
