@@ -76,5 +76,5 @@ RWTexture2D<float4> OutSrgbSkyColor;
 [numthreads(8,8,1)]
 void AccumulateSkyViewSrgb(uint3 id : SV_DispatchThreadID)
 {
-    OutSrgbSkyColor[id.xy] += float4(max(0.0f, dWaveLength * ColorConvertToSRGB(SpectrumSkyColor.Load(uint3(id.xy, 0)))), 1.0f);
+    OutSrgbSkyColor[id.xy] += float4(dWaveLength * ColorConvertToSRGB(SpectrumSkyColor.Load(uint3(id.xy, 0))), 1.0f);
 }

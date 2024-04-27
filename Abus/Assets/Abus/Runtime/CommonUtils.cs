@@ -51,7 +51,7 @@ namespace Rcying.Atmosphere
         public static Color ConvertXyzToSRGB(Vector3 XYZ)
         {
             var transformed = XyzToSRGB.transpose * XYZ;
-            return new Color(Mathf.Max(0.0f, transformed.x), Math.Max(0.0f, transformed.y), Mathf.Max(0.0f, transformed.z), 1.0f);
+            return new Color(transformed.x, transformed.y, transformed.z, 1.0f);
         }
 
         public static Vector3Int GetDispatchGroup(Vector3Int size, Vector3Int groupSize)

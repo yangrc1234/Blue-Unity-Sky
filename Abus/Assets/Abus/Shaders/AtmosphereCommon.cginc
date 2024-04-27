@@ -180,7 +180,7 @@ float3 WavelengthToXYZ(float4 SpectrumResult)
         XYZ.x = xFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
         XYZ.y = yFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
         XYZ.z = zFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
-        Result += SpectrumResult[i] * max(0.0f, XYZ);
+        Result += SpectrumResult[i] * XYZ;
     }
 
     return Result;
@@ -188,7 +188,7 @@ float3 WavelengthToXYZ(float4 SpectrumResult)
 
 float3 ColorConvertToSRGB(float4 SpectrumResult)
 {
-    return max(0.0f, mul(XyzToSRGB, WavelengthToXYZ(SpectrumResult)));
+    return mul(XyzToSRGB, WavelengthToXYZ(SpectrumResult));
 }
 
 /***************************************
