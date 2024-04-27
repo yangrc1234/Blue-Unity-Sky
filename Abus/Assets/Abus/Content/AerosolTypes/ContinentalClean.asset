@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fad681b95099421a88142596394d3a98, type: 3}
+  m_Name: ContinentalClean
+  m_EditorClassIdentifier: 
+  entries:
+  - component: {fileID: 11400000, guid: 322498fdb60179d4088f3a91ae55e4c7, type: 2}
+    NumberPerCM3: 0.18
+  - component: {fileID: 11400000, guid: 957397499a5cc6a4e9046941fec0cdc0, type: 2}
+    NumberPerCM3: 2600
+  StartHeight: 0
+  Thickness: 2
+  scaleHeightKM: 8

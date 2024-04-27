@@ -1,0 +1,80 @@
+﻿#define TRANSMITTANCE_READABLE 1
+#define MULTIPLE_SCATTERING_READABLE 1
+
+#include "LutCommon.cginc"
+
+#define NUM_SAMPLE_STEPS 32
+
+// For a scale height distribution, given view height and view direction, calculate scale height integral until atmosphere upper bound.
+float4 Integrate(float OriginHeight, float3 ViewDir, bool bSunFocus)
+{
+    const float mu = dot(ViewDir, float3(0.0, 1.0, 0.0));
+    
+    float IntegrateDistance;
+    const bool bGroundIntersected = ResolveRaymarchPath(OriginHeight, mu, IntegrateDistance);
+
+    const float StepSize = IntegrateDistance / NUM_SAMPLE_STEPS;
+    
+    float4 LuminanceIntegral = 0.0f;
+			    
+    float4 TransmittanceToOrigin = 1.0f;
+
+    const float3 Step = IntegrateDistance * ViewDir / NUM_SAMPLE_STEPS;
+    for (int iStep = 0; iStep < NUM_SAMPLE_STEPS; iStep++)
+    {
+        const float3 SamplePos = float3(0.0f, OriginHeight, 0.0f) + (iStep + 0.5f) * Step;
+        const float SampleHeight = length(SamplePos);
+        float4 RayleighExt, RayleighScat;
+        RayleighExt = RayleighScat = SampleRayleigh(SampleHeight);
+        const float CosSunZenith = dot(normalize(SamplePos), AtmosphereLightDirection);
+
+        const float4 TransmittanceToSun = RayIntersectsGround(SampleHeight, CosSunZenith) ? 0.0f : GetTransmittance(SampleHeight, CosSunZenith);
+
+        float4 MultipleScattering = GetMultipleScattering(SampleHeight, CosSunZenith);
+        float4 ScatteringForMS = RayleighScat;
+        float4 MieLuminance = 0.0f;
+        float4 MieLuminanceSunFocus = 0.0f;
+        float4 MieExtinctionCoefficient = 0.0f;
+        const float VoL = min(dot(ViewDir, AtmosphereLightDirection), CosSunDiscHalfAngle);
+        IntegrateMieParticles(SampleHeight, ScatteringForMS, MieExtinctionCoefficient, MieLuminance, VoL);
+
+        float4 OZoneAbsorption = SampleOZoneAbsorptionCoefficients(SampleHeight);
+
+        float4 ToIntegrate;
+        ToIntegrate = /*UnitIlluminance **/ TransmittanceToSun * (
+            RayleighScat * RayleighPhaseAlt(dot(ViewDir, AtmosphereLightDirection)) +
+            MieLuminance)
+        + MultipleScattering * ScatteringForMS * IsotropicPhase();
+
+        float4 SampleTransmittance = exp(-StepSize * (RayleighExt + MieExtinctionCoefficient));
+        LuminanceIntegral += TransmittanceToOrigin * IntegrateWithTransmittance(
+            RayleighExt + MieExtinctionCoefficient + OZoneAbsorption,
+            SampleTransmittance,
+            ToIntegrate
+        );
+
+        TransmittanceToOrigin *= SampleTransmittance;
+    }
+
+    return max(0.0f, LuminanceIntegral);
+}
+
+RWTexture2D<float4> OutSpectrumSkyColor;
+
+#pragma kernel MainCS
+[numthreads(8,8,1)]
+void MainCS(uint3 id : SV_DispatchThreadID)
+{
+    float3 ViewDir = GetSkyViewTextureUvToViewDir((0.5f + id.xy) * SkyViewTextureSizeAndInvSize.zw);
+    OutSpectrumSkyColor[id.xy] = CurrentIteratingSunIrradiance * Integrate(GroundHeight, ViewDir, false);
+}
+
+Texture2D<float4> SpectrumSkyColor;
+RWTexture2D<float4> OutSrgbSkyColor;
+
+#pragma kernel AccumulateSkyViewSrgb
+[numthreads(8,8,1)]
+void AccumulateSkyViewSrgb(uint3 id : SV_DispatchThreadID)
+{
+    OutSrgbSkyColor[id.xy] += float4(max(0.0f, dWaveLength * ColorConvertToSRGB(SpectrumSkyColor.Load(uint3(id.xy, 0)))), 1.0f);
+}

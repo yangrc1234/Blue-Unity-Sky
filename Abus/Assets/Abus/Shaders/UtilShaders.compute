@@ -1,0 +1,9 @@
+﻿RWTexture2D<float4> ClearTarget;
+
+// CS for clearing the LUT to black.
+#pragma kernel ClearCS
+[numthreads(8, 8, 1)]
+void ClearCS(uint3 id : SV_DispatchThreadID)
+{
+    ClearTarget[id.xy] = 0.0f;
+}

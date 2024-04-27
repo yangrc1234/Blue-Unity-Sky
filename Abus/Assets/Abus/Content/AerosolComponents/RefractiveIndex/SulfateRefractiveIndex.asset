@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7d2a31087634ab3b2f2a234dc1cbd8d, type: 3}
+  m_Name: SulfateRefractiveIndex
+  m_EditorClassIdentifier: 
+  dataComment: 
+  sourceCsv: {fileID: 4900000, guid: 87388c5bc98790d4b8132c60f3100bd8, type: 3}
+  wavelengthImportScale: 1000
+  data:
+  - wavelength: 350
+    real: 1.37
+    imag: -0.00000000722
+    width: 25
+  - wavelength: 400
+    real: 1.36
+    imag: -0.00000000352
+    width: 50
+  - wavelength: 450
+    real: 1.36
+    imag: -0.00000000286
+    width: 50
+  - wavelength: 500
+    real: 1.36
+    imag: -0.00000000284
+    width: 50
+  - wavelength: 550
+    real: 1.35
+    imag: -0.0000000036
+    width: 50
+  - wavelength: 600
+    real: 1.35
+    imag: -0.0000000117
+    width: 50
+  - wavelength: 650
+    real: 1.35
+    imag: -0.0000000165
+    width: 50
+  - wavelength: 700
+    real: 1.35
+    imag: -0.0000000308
+    width: 25

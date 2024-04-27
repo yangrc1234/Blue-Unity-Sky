@@ -1,0 +1,111 @@
+﻿#pragma kernel MainCS
+
+#define TRANSMITTANCE_READABLE 1
+#include "LutCommon.cginc"
+
+#define NUM_SAMPLE_STEPS 30
+
+void IntegrateThroughViewDirection(float OriginHeight, float3 ViewDir, float3 SunDir, out float4 LuminanceIntegral, out float4 MultiScat)
+{
+    const float viewMu = dot(ViewDir, float3(0.0f, 1.0f, 0.0f));
+    float IntegrateDistance;
+    bool bGroundIntersected = ResolveRaymarchPath(OriginHeight, viewMu, IntegrateDistance);
+    
+    const float StepSize = IntegrateDistance / NUM_SAMPLE_STEPS;
+    const float3 Step = StepSize * ViewDir;
+
+    LuminanceIntegral = 0.0f;
+    MultiScat = 0.0f;
+    
+    float4 TransmittanceToOrigin = 1.0f;
+
+    for (int iStep = 0; iStep < NUM_SAMPLE_STEPS; iStep++)
+    {
+        const float3 SamplePos = float3(0.0f, OriginHeight, 0.0f) + (iStep + 0.5f) * Step;
+        
+        const float SampleHeight = length(SamplePos);
+        float4 RayleighExt, RayleighScat;
+        RayleighExt = RayleighScat = SampleRayleigh(SampleHeight);
+        
+		const float CosSunZenith = dot(normalize(SamplePos), SunDir);
+        const float4 TransmittanceToSun = RayIntersectsGround(SampleHeight, CosSunZenith) ? 0.0f : GetTransmittance(SampleHeight, CosSunZenith);
+        
+        float4 MieScattering = 0.0f, MieExtinction = 0.0f;
+        IntegrateMieParticles(SampleHeight, MieScattering, MieExtinction);
+        
+        float4 OZoneAbsorption = max(0.0f, SampleOZoneAbsorptionCoefficients(SampleHeight));
+
+        float4 SampleTransmittance = exp(-StepSize * (RayleighExt + MieExtinction + OZoneAbsorption));
+
+        LuminanceIntegral += TransmittanceToOrigin * IntegrateWithTransmittance(
+            RayleighExt + MieExtinction + OZoneAbsorption,
+            SampleTransmittance,
+            /*UnitIlluminance * */ TransmittanceToSun * (RayleighScat + MieScattering) /** IsotropicPhase() Take out to apply at last.*/ 
+        );
+        
+        MultiScat += TransmittanceToOrigin * IntegrateWithTransmittance(
+            RayleighExt + MieExtinction + OZoneAbsorption,
+            SampleTransmittance,
+            /*UnitIlluminance * */ (RayleighScat + MieScattering) /** IsotropicPhase() Take out to apply at last.*/ );
+
+        TransmittanceToOrigin *= SampleTransmittance;
+    }
+
+    LuminanceIntegral *= IsotropicPhase();
+    MultiScat *= IsotropicPhase();
+
+    if (bGroundIntersected)
+    {
+        // Calculate R/mu at ground intersected point.
+        const float3 GroundIntersection = float3(0.0f, OriginHeight, 0.0f) + IntegrateDistance * ViewDir;
+        const float mu = dot(normalize(GroundIntersection), SunDir);
+        const float4 TransmittanceToSun = GetTransmittance(GroundHeight, mu);
+
+        LuminanceIntegral += /*UnitIlluminance * */ (1.0f / PI) * mu * TransmittanceToSun * TransmittanceToOrigin * GroundSpectrumAlbedo; 
+    }
+}
+
+// Stored illuminance of multiple scattering, given sun direction and height. 
+RWTexture2D<float4> OutMultipleScattering;
+
+[numthreads(8,8,1)]
+void MainCS(uint3 id : SV_DispatchThreadID)
+{
+    float r, mu;
+    GetRMuFromMultipleScatteringTextureUv((0.5f + id.xy) / MultipleScatteringTextureSizeInvSize.xy, r, mu);
+    float3 SunDirection = float3(0.0f, mu, sqrt(saturate(1.0f - mu * mu)));
+    
+    float4 Illuminance = 0.0f, MultiScat = 0.0f;
+
+    const int NUM_THETA = 8;
+    const int NUM_PHI = 8;
+    
+    for (int iPhi = 0; iPhi < NUM_PHI; iPhi++)    // Y(vertical) angle.
+    {
+        for (int iTheta = 0; iTheta < NUM_THETA; iTheta++) // XZ plane angle.
+        {
+            const float dPhi = PI / NUM_THETA;
+            const float dTheta = (2.0f * PI) / NUM_PHI;
+            
+            const float phi = (iPhi + 0.5f) * dPhi;
+            const float theta = (iTheta + 0.5f) * dTheta;
+            float3 ViewDirection;
+            float sinphi;
+            sincos(phi, sinphi, ViewDirection.y);
+            float sintheta, costheta;
+            sincos(theta, sintheta, costheta);
+            ViewDirection.z = sintheta * sinphi;
+            ViewDirection.x = costheta * sinphi;
+
+            const float dw = dPhi * dTheta * sinphi;
+            
+            float4 Luminance, CurrMultiScat;
+            IntegrateThroughViewDirection(r, ViewDirection, SunDirection, Luminance, CurrMultiScat);
+
+            Illuminance += Luminance * dw;   
+            MultiScat += CurrMultiScat * dw;
+        }
+    }
+
+    OutMultipleScattering[id.xy] = Illuminance / (1.0f - MultiScat);
+}

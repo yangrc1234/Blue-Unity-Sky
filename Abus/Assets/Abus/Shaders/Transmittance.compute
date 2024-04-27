@@ -1,0 +1,80 @@
+#include "LutCommon.cginc"
+
+
+#define NUM_SAMPLE_STEPS 64
+
+float4 TransmittanceRaymarch(float r, float mu)
+{
+    float IntegrateDistance = DistanceToTopAtmosphereBoundary(r, mu);
+
+    const float StepSize = IntegrateDistance / NUM_SAMPLE_STEPS;
+    float3 ViewDir = float3(0.0f, mu, sqrt(saturate(1.0 - mu * mu)));
+    
+    const float3 Step = StepSize * ViewDir;
+    
+    float4 TotalExtinctionCoefficient = 0.0;
+        
+    for (int iStep = 0; iStep < NUM_SAMPLE_STEPS; ++iStep) {
+        const float3 SamplePos = float3(0.0f, r, 0.0f) + (iStep + 0.5f) * Step;
+        const float SampleHeight = length(SamplePos);
+
+        // Sample atmosphere at SampleHeight.
+        TotalExtinctionCoefficient += SampleRayleigh(SampleHeight);
+
+        float4 Scattering = 0.0f;
+		IntegrateMieParticles(SampleHeight, Scattering, TotalExtinctionCoefficient);
+
+        TotalExtinctionCoefficient += SampleOZoneAbsorptionCoefficients(SampleHeight);
+    }
+    
+    return exp(-TotalExtinctionCoefficient * StepSize);
+}
+
+RWTexture2D<float4> OutTransmittance;
+
+#pragma kernel MainCS
+[numthreads(8,8,1)]
+void MainCS(uint3 id : SV_DispatchThreadID)
+{
+    float r, mu;
+    GetRMuFromTransmittanceTextureUv((0.5f + id.xy) / TransmittanceTextureSizeInvSize.xy, r, mu);
+    OutTransmittance[id.xy] = TransmittanceRaymarch(r, mu);
+}
+
+#pragma kernel ConvertWavelengthTransmittanceToSRGB
+// We need a SRGB transmittance for other system.
+Texture2D<float4> WavelengthTransmittance;
+RWTexture2D<float4> OutSRGBTransmittance;
+RWTexture2D<float4> OutSRGBTransmittanceWeight;
+[numthreads(8,8,1)]
+void ConvertWavelengthTransmittanceToSRGB(uint3 id : SV_DispatchThreadID)
+{
+    float4 Value = WavelengthTransmittance.Load(uint3(id.xy, 0));
+    // I can't find any source for "mapping Wavelength Transmittance to XYZ(or SRGB) Transmittance",
+    // so here, I consider SRGB transmittance as, "For R,G,B, the weighted average of corresponding wavelength transmittance".
+    // To be more detailed:
+    // 1. For each wavelength, we could know its RGB component (To XYZ then to SRGB), thus its "weight" in R or G or B channel. 
+    // 2. We sum up (weight * transmittance) and (weight) to 2 textures.
+    // 3. After summing up across all wavelength, divide (weight*transmittance) by (weight).
+    // Not sure if this is most correct, but at least give 0~1 normalized result.
+
+    float3 Transmittance = 0.0f, Weight = 0.0f;
+    for (int i = 0; i < 4; i++)
+    {
+        const float3 RGBWeights = WavelengthConvertToSRGB(CurrentIteratingWavelengthUM[i] * 1e3);
+
+        Transmittance += Value[i] * RGBWeights;
+        Weight += RGBWeights;
+    }
+
+    OutSRGBTransmittance[id.xy] += float4(Transmittance, 1.0f);
+    OutSRGBTransmittanceWeight[id.xy] += float4(Weight, 1.0f);
+}
+
+#pragma kernel ResolveSRGBTransmittance
+Texture2D<float4> SRGBTransmittanceWeight;
+[numthreads(8,8,1)]
+void ResolveSRGBTransmittance(uint3 id : SV_DispatchThreadID)
+{
+    OutSRGBTransmittance[id.xy] = OutSRGBTransmittance[id.xy] / SRGBTransmittanceWeight[id.xy];
+}

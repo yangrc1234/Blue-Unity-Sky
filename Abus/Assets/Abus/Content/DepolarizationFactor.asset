@@ -1,0 +1,131 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c14c1820c1d64be185bb03083ce05be3, type: 3}
+  m_Name: DepolarizationFactor
+  m_EditorClassIdentifier: 
+  dataComment: "Data from \n[Bucholtz95]Rayleigh-scattering calculations for the
+    terrestrial atmosphere. "
+  sourceCsv: {fileID: 4900000, guid: 55d7d8983b7082e48b01e32ae40f263f, type: 3}
+  wavelengthImportScale: 1000
+  valueImportScale: 0.01
+  data:
+  - wavelength: 200
+    value: 0.04545
+    width: 2.5
+  - wavelength: 205
+    value: 0.04384
+    width: 5
+  - wavelength: 210
+    value: 0.04221
+    width: 5
+  - wavelength: 215
+    value: 0.04113
+    width: 5
+  - wavelength: 220
+    value: 0.04004
+    width: 5
+  - wavelength: 225
+    value: 0.03895
+    width: 5
+  - wavelength: 230
+    value: 0.03785
+    width: 7.5
+  - wavelength: 240
+    value: 0.03675
+    width: 10
+  - wavelength: 250
+    value: 0.03565
+    width: 10
+  - wavelength: 260
+    value: 0.03455
+    width: 10
+  - wavelength: 270
+    value: 0.034
+    width: 10
+  - wavelength: 280
+    value: 0.03289
+    width: 10
+  - wavelength: 290
+    value: 0.03233
+    width: 10
+  - wavelength: 300
+    value: 0.03178
+    width: 10
+  - wavelength: 310
+    value: 0.03178
+    width: 10
+  - wavelength: 320
+    value: 0.031219998
+    width: 10
+  - wavelength: 330
+    value: 0.03066
+    width: 10
+  - wavelength: 340
+    value: 0.03066
+    width: 10
+  - wavelength: 350
+    value: 0.0301
+    width: 10
+  - wavelength: 360
+    value: 0.0301
+    width: 10
+  - wavelength: 370
+    value: 0.0301
+    width: 10
+  - wavelength: 380
+    value: 0.02955
+    width: 10
+  - wavelength: 390
+    value: 0.02955
+    width: 10
+  - wavelength: 400
+    value: 0.02955
+    width: 30
+  - wavelength: 450
+    value: 0.028989999
+    width: 50
+  - wavelength: 500
+    value: 0.02842
+    width: 50
+  - wavelength: 550
+    value: 0.02842
+    width: 50
+  - wavelength: 600
+    value: 0.027859999
+    width: 50
+  - wavelength: 650
+    value: 0.027859999
+    width: 50
+  - wavelength: 700
+    value: 0.027859999
+    width: 50
+  - wavelength: 750
+    value: 0.027859999
+    width: 50
+  - wavelength: 800
+    value: 0.0273
+    width: 50
+  - wavelength: 850
+    value: 0.0273
+    width: 50
+  - wavelength: 900
+    value: 0.0273
+    width: 50
+  - wavelength: 950
+    value: 0.0273
+    width: 50
+  - wavelength: 1000
+    value: 0.0273
+    width: 25
+  minValue: 0.0273
+  maxValue: 0.04545
+  averageValue: 0.03234611

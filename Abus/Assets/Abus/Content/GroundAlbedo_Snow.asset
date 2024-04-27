@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c14c1820c1d64be185bb03083ce05be3, type: 3}
+  m_Name: GroundAlbedo_Snow
+  m_EditorClassIdentifier: 
+  dataComment: Random ground albedo data.
+  sourceCsv: {fileID: 4900000, guid: cf4e0c54e848d9541ba0b406d92c45bf, type: 3}
+  wavelengthImportScale: 1
+  valueImportScale: 1
+  data:
+  - wavelength: 400
+    value: 0.79
+    width: 50
+  - wavelength: 500
+    value: 0.76
+    width: 100
+  - wavelength: 600
+    value: 0.75
+    width: 100
+  - wavelength: 700
+    value: 0.71
+    width: 50
+  minValue: 0.71
+  maxValue: 0.79
+  averageValue: 0.7525
