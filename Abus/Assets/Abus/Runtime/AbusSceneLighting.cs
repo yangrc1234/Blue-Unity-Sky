@@ -13,6 +13,7 @@ namespace Abus.Runtime
         public bool UpdateBoundLight = true;
         public bool UpdateAmbient = true;
         public bool UpdateSkybox = true;
+        public bool UpdateFogColor = true;
         public Shader skyboxShader;
 
         Vector3 GetNormalizedAndIntensity(Vector3 srgbColor, out float intensity)
@@ -51,8 +52,18 @@ namespace Abus.Runtime
             {
                 SetSkybox();
             }
+
+            if (UpdateFogColor)
+            {
+                SetFogColor();
+            }
         }
-        
+
+        private void SetFogColor()
+        {
+            RenderSettings.fogColor = new Color(lutUpdater.SkyIrradiance[0, 0], lutUpdater.SkyIrradiance[1, 0], lutUpdater.SkyIrradiance[2, 0], 1.0f);
+        }
+
 
         private Material skyboxMaterial;
         public void SetSkybox()
