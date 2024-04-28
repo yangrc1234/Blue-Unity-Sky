@@ -58,8 +58,7 @@ namespace Abus.Runtime
                         {
                             core.Aerosols.Add(new ());
                         }
-                        core.Aerosols[Index].IsTransported = false;
-                        core.Aerosols[Index].PBLThickness = MainProfile.Thickness;
+                        core.Aerosols[Index].heightType = EAerosolHeightType.PlanetBoundaryLayer;
                         core.Aerosols[Index].scaleHeightKM = MainProfile.scaleHeightKM;
                         var surfaceAreaDistributionGeometryMean = entry.component.GetSurfaceAreaDistributionGeometricMean();
                         core.Aerosols[Index].geometryCrossSection = OverallIntensity * entry.NumberPerCM3 * Mathf.PI * surfaceAreaDistributionGeometryMean * surfaceAreaDistributionGeometryMean * 1e-3f;
@@ -69,6 +68,8 @@ namespace Abus.Runtime
                         Index++;
                     }
                 }
+
+                core.PlanetBoundaryLayerHeight = MainProfile.PlanetBoundaryLayerHeight;
             }
             
             core.MarkSettingsDirty();

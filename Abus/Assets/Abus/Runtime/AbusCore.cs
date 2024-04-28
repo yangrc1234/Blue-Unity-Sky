@@ -8,6 +8,14 @@ using UnityEngine.Serialization;
 
 namespace Abus.Runtime
 {
+    public enum EAerosolHeightType
+    {
+        PlanetBoundaryLayer,
+        Transported,
+        Troposphere,
+        Stratosphere,
+    }
+    
     /// <summary>
     /// Describes ONE aerosol component(soot, water soluble etc.),
     /// Including its density(total geometry cross section), particle profile and its vertical profile.
@@ -23,13 +31,10 @@ namespace Abus.Runtime
         public float radiusGeometricDeviation = 0.0f;
         [Range(0.0f, 1.0f)]
         public float geometryCrossSection = 0.01f;
-        
-        [Header("Vertical Profile")]
-        [Range(0.01f, 8.0f)]
-        public float PBLThickness = 2.0f;  // PBL layer thickness.
-        [Range(0.01f, 8.0f)]
+
+        [Header("Vertical Profile")] [Range(0.01f, 8.0f)]
+        public EAerosolHeightType heightType;
         public float scaleHeightKM = 8.0f;  // Value above PBL layer.
-        public bool IsTransported = false; // Is the aerosol transported from outside. the aerosol will be reduced in PBL if higher.
     }
     
     /// <summary>

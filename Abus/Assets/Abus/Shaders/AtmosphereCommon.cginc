@@ -221,15 +221,15 @@ float4 SampleRayleigh(float Height)
 Texture2D<float4> MieProperties;
 Texture2D<float4> MieWavelengthLut;
 int NumMieTypes;
+float PlanetBoundaryLayerHeight;
 
 #include "JEPhaseFunction.cginc"
 
-void LoadMieProperty(int TypeIndex, out float GeometryCrossSection, out float PBLDensity, out float Thickness, out float ScaleHeight, out float4 JEPhaseParams)
+void LoadMieProperty(int TypeIndex, out float GeometryCrossSection, out float HeightProfileInfo, out float ScaleHeight, out float4 JEPhaseParams)
 {
     float4 Result = MieProperties.Load(uint3(TypeIndex, 0, 0));
     GeometryCrossSection = Result.x;
-    PBLDensity = Result.y;
-    Thickness = Result.z;
+    HeightProfileInfo = Result.y;
     ScaleHeight = Result.w;
 
     JEPhaseParams = MieProperties.Load(uint3(TypeIndex, 1, 0));
@@ -253,16 +253,22 @@ float4 SimpleMiePhaseFunction(float4 g, float VoL)
 }
 
 // Get phase function for 
-float GetAerosolHeightProfile(float SampleHeight, float PBLDensity, float Thickness, float ScaleHeight)
+float GetAerosolHeightProfile(float SampleHeight, float HeightProfileInfo, float ScaleHeight)
 {
     float Altitude = SampleHeight - GroundHeight;
 
-    // The height distribution model from BAMS98 has a step at PBL boundary.
-    // We need to do a smooth transition near boundary to avoid artifacts.
-
-    const float FadeMask = saturate((Altitude - Thickness) / 2.0f);
-    
-    return PBLDensity * GetScaleHeight(Altitude - Thickness, ScaleHeight) * (1.0f - FadeMask);
+    if (HeightProfileInfo == 0.0f)
+    {
+        // The height distribution model from BAMS98 has a step at PBL boundary.
+        // We need to do a smooth transition near boundary to avoid artifacts.
+        const float FadeMask = saturate((Altitude - PlanetBoundaryLayerHeight) / 2.0f);
+        
+        return GetScaleHeight(Altitude - PlanetBoundaryLayerHeight, ScaleHeight) * (1.0f - FadeMask);
+    }
+    else
+    {
+        return 0.0f;
+    }
 }
 
 #define JE_PHASE_FUNCTION 1
@@ -272,10 +278,10 @@ void IntegrateMieParticles(float SampleHeight, inout float4 TotalScattering, ino
     for (int iMie = 0; iMie < NumMieTypes; iMie++)
     {
         float GeometryCrossSection;
-        float PBLDensity, Thickness, ScaleHeight;
+        float HeightProfileInfo, ScaleHeight;
         float4 JEPhaseParams;
-        LoadMieProperty(iMie, GeometryCrossSection, PBLDensity, Thickness, ScaleHeight, JEPhaseParams);
-        const float ConcentrationScale = GetAerosolHeightProfile(SampleHeight, PBLDensity, Thickness, ScaleHeight);
+        LoadMieProperty(iMie, GeometryCrossSection, HeightProfileInfo, ScaleHeight, JEPhaseParams);
+        const float ConcentrationScale = GetAerosolHeightProfile(SampleHeight, HeightProfileInfo, ScaleHeight);
         if (GeometryCrossSection <= 0.0f || ConcentrationScale <= 0.0f)
             continue;
         GeometryCrossSection *= ConcentrationScale;

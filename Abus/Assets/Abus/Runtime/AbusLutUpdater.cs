@@ -350,9 +350,10 @@ namespace Abus.Runtime
             for (int iMieType = 0; iMieType < core.Aerosols.Count; iMieType++)
             {
                 var radius = core.Aerosols[iMieType].radiusUm;
-                var geometryCrossSectionKM = core.Aerosols[iMieType].geometryCrossSection; 
-                
-                lut.SetPixel(iMieType, 0, new Vector4(geometryCrossSectionKM, core.Aerosols[iMieType].IsTransported ? 0.0f : 1.0f, core.Aerosols[iMieType].PBLThickness, core.Aerosols[iMieType].scaleHeightKM));
+                var geometryCrossSectionKM = core.Aerosols[iMieType].geometryCrossSection;
+
+                float HeightProfileInfo = (int)core.Aerosols[iMieType].heightType;
+                lut.SetPixel(iMieType, 0, new Vector4(geometryCrossSectionKM, HeightProfileInfo, 0.0f, core.Aerosols[iMieType].scaleHeightKM));
                 lut.SetPixel(iMieType, 1, radius > 1.5f ? MieUtils.JEPhaseParams(core.Aerosols[iMieType].radiusUm) : Color.black);
             }
 
@@ -491,6 +492,8 @@ namespace Abus.Runtime
             Shader.SetGlobalTexture("MieProperties", miePropertiesLut);
             Shader.SetGlobalTexture("MieWavelengthLut", MieWavelengthLut);
             Shader.SetGlobalInteger("NumMieTypes", core.Aerosols.Count);
+            Shader.SetGlobalFloat("PlanetBoundaryLayerHeight", core.PlanetBoundaryLayerHeight);
+            
             
             Shader.SetGlobalFloat("OZoneLowerDensity", core.OZoneLowerDensity);
             Shader.SetGlobalFloat("OZoneStratosphereMidDensity", core.OZoneStratosphereMidDensity);
