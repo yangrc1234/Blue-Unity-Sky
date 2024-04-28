@@ -45,6 +45,11 @@ namespace Abus.Runtime
     public class AbusCore : MonoBehaviour
     {
         #region Inspector
+        
+        [Header("General")]
+        public float PlanetRadius = 6371.0f;
+        public float AtmosphereHeight = 100.0f;
+        
         /// <summary>
         /// A csv file containing solar irradiance data,
         /// each line should be (wavelength in NM, irradiance) format.

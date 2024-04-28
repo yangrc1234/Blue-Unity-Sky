@@ -16,10 +16,11 @@ namespace Abus.Runtime
     public class AbusLutUpdater : MonoBehaviour
     {
         [Header("General")] [Range(0.0f, 200.0f)]
-        public float lutHeightBoundary = 80.0f;
         public Vector2Int skyViewLutSize = new Vector2Int(128, 128);
         public Vector2Int transmittanceTextureSize = new Vector2Int(512, 64);
         public Vector2Int multipleScatteringTextureSize = new Vector2Int(64, 64);
+        [Range(0.0f, 30.0f)]
+        public float captureAltitude = 0.0f;
 
         [Header("Compute Shaders")]
         public ComputeShader TransmittanceCS;
@@ -468,9 +469,9 @@ namespace Abus.Runtime
             Vector3 lightDirection = GetLightDirection();
             Shader.SetGlobalVector("AtmosphereLightDirection", lightDirection);
             
-            Shader.SetGlobalVector("AtmosphereThicknessAndInv", new Vector4(lutHeightBoundary, 1.0f / lutHeightBoundary, 0.0f, 0.0f));
-            Shader.SetGlobalFloat("GroundHeight", 6360.0f);
-            Shader.SetGlobalFloat("AtmosphereHeight", 6360.0f + lutHeightBoundary);
+            Shader.SetGlobalVector("AtmosphereThicknessAndInv", new Vector4(core.AtmosphereHeight, 1.0f / core.AtmosphereHeight, 0.0f, 0.0f));
+            Shader.SetGlobalFloat("GroundHeight", core.PlanetRadius);
+            Shader.SetGlobalFloat("AtmosphereHeight", core.PlanetRadius + core.AtmosphereHeight);
             Shader.SetGlobalVector("TransmittanceTextureSizeInvSize", new Vector4(transmittanceTextureSize.x, transmittanceTextureSize.y, 1.0f / transmittanceTextureSize.x, 1.0f / transmittanceTextureSize.y));
             Shader.SetGlobalVector("MultipleScatteringTextureSizeInvSize", new Vector4(multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1.0f / multipleScatteringTextureSize.x, 1.0f / multipleScatteringTextureSize.y));
             Shader.SetGlobalVector("SkyViewTextureSizeAndInvSize", new Vector4(skyViewLutSize.x, skyViewLutSize.y, 1.0f / skyViewLutSize.x, 1.0f / skyViewLutSize.y));
@@ -501,6 +502,7 @@ namespace Abus.Runtime
             Shader.SetGlobalVector("SunCenterSrgbRadiance", core.SRGBSolarIrradiance / (Mathf.PI * core.HalfSunAngularDiameterRad * core.HalfSunAngularDiameterRad));
             Shader.SetGlobalFloat("dWaveLength", GetWavelengthDW());
             Shader.SetGlobalFloat("NumWavelengths", numWavelengths);
+            Shader.SetGlobalFloat("CaptureHeight", captureAltitude + core.PlanetRadius);
         }
     }
 }

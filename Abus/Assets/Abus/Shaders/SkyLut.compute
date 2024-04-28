@@ -5,6 +5,8 @@
 
 #define NUM_SAMPLE_STEPS 32
 
+#define HIGHER_SAMPLE_AT_BOUNDARY_LAYER 1
+
 void IntegrateStep(float3 ViewDir, float3 SamplePos, const float StepSize, inout float4 LuminanceIntegral, inout float4 TransmittanceToOrigin)
 {
     const float SampleHeight = length(SamplePos);
@@ -50,17 +52,31 @@ float4 Integrate(float OriginHeight, float3 ViewDir)
     const float StepSize = IntegrateDistance / NUM_SAMPLE_STEPS;
     
     float4 LuminanceIntegral = 0.0f;
-			    
+
     float4 TransmittanceToOrigin = 1.0f;
 
     const float3 Step = IntegrateDistance * ViewDir / NUM_SAMPLE_STEPS;
     for (int iStep = 0; iStep < NUM_SAMPLE_STEPS; iStep++)
     {
         const float3 SamplePos = float3(0.0f, OriginHeight, 0.0f) + (iStep + 0.5f) * Step;
-        IntegrateStep(ViewDir, SamplePos, StepSize, LuminanceIntegral, TransmittanceToOrigin);
+
+        const float DistanceToPBLTop = abs(length(SamplePos) - GroundHeight - PlanetBoundaryLayerHeight); 
+        if (HIGHER_SAMPLE_AT_BOUNDARY_LAYER && DistanceToPBLTop < PLANET_BOUNDARY_LAYER_FADE_HEIGHT * 2.0f)
+        {
+            const int SubStepNum = 3;
+            for (int iSubstep = 0; iSubstep < SubStepNum; iSubstep++)
+            {
+                const float3 SamplePos1 = float3(0.0f, OriginHeight, 0.0f) + (iStep + (iSubstep + 0.5f) / SubStepNum) * Step;
+                IntegrateStep(ViewDir, SamplePos1, StepSize * (1.0f / SubStepNum), LuminanceIntegral, TransmittanceToOrigin);
+            }
+        }
+        else
+        {
+            IntegrateStep(ViewDir, SamplePos, StepSize, LuminanceIntegral, TransmittanceToOrigin);
+        }
     }
 
-    return max(0.0f, LuminanceIntegral);
+    return LuminanceIntegral;
 }
 
 RWTexture2D<float4> OutSpectrumSkyColor;
@@ -69,8 +85,8 @@ RWTexture2D<float4> OutSpectrumSkyColor;
 [numthreads(8,8,1)]
 void MainCS(uint3 id : SV_DispatchThreadID)
 {
-    float3 ViewDir = GetSkyViewTextureUvToViewDir((0.5f + id.xy) * SkyViewTextureSizeAndInvSize.zw);
-    OutSpectrumSkyColor[id.xy] = CurrentIteratingSunIrradiance * Integrate(GroundHeight, ViewDir);
+    float3 ViewDir = GetSkyViewTextureUvToViewDir(CaptureHeight, (0.5f + id.xy) * SkyViewTextureSizeAndInvSize.zw);
+    OutSpectrumSkyColor[id.xy] = CurrentIteratingSunIrradiance * Integrate(CaptureHeight, ViewDir);
 }
 
 Texture2D<float4> SpectrumSkyColor;

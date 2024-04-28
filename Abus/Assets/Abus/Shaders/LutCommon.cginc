@@ -137,108 +137,8 @@ float4 SkyViewTextureSizeAndInvSize;
 float3 SkyViewLutUpDir;
 
 #define UPPER_PART_FRACTION 0.75	// How many pixels are for above-horizon
-#define SKY_VIEW_UV_MAPPING 1
 
-// Mapping 0 is a spherical coordinate that place sun at top, then twist the sphere to match its horizon with actual horizon. [Suzuki 23]
-// Very nice when presenting high frequency around sun, but have some problem when with high frequency info at horizon.
-// 
-// Mapping 1 is more traditional mapping, but focus more pixels around sun vertically.
-#if SKY_VIEW_UV_MAPPING == 0
-#define CONCENTRATION (3.0 / 1.0)
-float ConcentrateOnEnd(float Concen, float RawValue)
-{
-	return pow(RawValue, Concen);
-}
-
-float CalculateHorizonPhiOnLongitude(float3 X, float3 Y, float3 Z, float theta)
-{
-	// Calculate "On this longitude line of theta, what's the phi of horizon?"
-	// 1. Calculate the plane formed by this longitude.
-	float sintheta, costheta;
-	sincos(theta, sintheta, costheta);
-	float3 PlaneVec = (sintheta * X - costheta * Y);
-	float3 PlaneNormal = cross(PlaneVec, Z);
-	
-	// 2. Get intersection vector of longitude plane and horizon plane,
-	float3 intersectionVector = normalize(cross(float3(0.0, 1.0, 0.0), PlaneNormal));
-
-	// 3. Calculate the angle between intersection vector and sun vector.
-	return acos(dot(intersectionVector, SkyViewLutUpDir));
-}
-
-float3 GetSkyViewTextureUvToViewDir(float2 uv)
-{
-	// Imagine T-pose looking at the sun,
-	// Z is sun, Y is your head-up, X is your right arm
-	float3 Z = SkyViewLutUpDir;
-	float3 X = normalize(cross(Z, float3(0.0f, 1.0f, 0.0f)));
-	float3 Y = cross(X, Z);
-
-	float theta = (uv.x * uv.x) * PI;	// Starts at Y-, rotate towards X+.
-	
-	float sintheta, costheta;
-	sincos(theta, sintheta, costheta);
-	const float currentHorizonPhi = CalculateHorizonPhiOnLongitude(X, Y, Z, theta);// acos(dot(intersectionVector, SkyViewLutUpDir));
-
-	float phi;
-	if (uv.y < UPPER_PART_FRACTION)
-	{
-		// Above horizon.
-		float V01 = uv.y / UPPER_PART_FRACTION;
-		phi = ConcentrateOnEnd(CONCENTRATION, V01) * currentHorizonPhi;
-	}
-	else
-	{
-		float V01 = (uv.y - UPPER_PART_FRACTION) / (1.0f - UPPER_PART_FRACTION);
-		phi = V01 * (PI - currentHorizonPhi) + currentHorizonPhi;
-	}
-
-	float sinphi, cosphi;
-	sincos(phi, sinphi, cosphi);
-
-	return Z * cosphi + sinphi * -costheta * Y + sinphi * sintheta * X;
-}
-
-float2 GetSkyViewTextureViewDirToUV(float3 ViewDir)
-{
-	// Imagine T-pose looking at the sun,
-	// Z is sun, Y is your head-up, X is your right arm
-	float3 Z = SkyViewLutUpDir;
-	float3 X = normalize(cross(Z, float3(0.0f, 1.0f, 0.0f)));
-	float3 Y = cross(X, Z);
-
-	float phi = acos(dot(ViewDir, Z));
-
-	float x = dot(ViewDir, X);
-	float y = dot(ViewDir, -Y);
-	float theta = atan2(x, y);
-
-	// Calculate the angle between intersection vector and sun vector.
-	const float currentHorizonPhi = CalculateHorizonPhiOnLongitude(X, Y, Z, theta);
-
-	float U = sqrt(abs(theta) / PI);
-	float V;
-	if (phi < currentHorizonPhi)
-	{
-		// Above horizon.
-		float V01 = ConcentrateOnEnd(1.0f / CONCENTRATION, phi / currentHorizonPhi);
-
-		// Don't sample on the boundary line of up pixels and bottom pixels, could cause low quality bilinear sample near horizon.
-		V01 = GetTextureCoordFromUnitRange(V01, SkyViewTextureSizeAndInvSize.w / UPPER_PART_FRACTION);
-		V = V01 * UPPER_PART_FRACTION;
-	}
-	else
-	{
-		float V01 = (phi - currentHorizonPhi) / (PI - currentHorizonPhi);
-		V01 = GetTextureCoordFromUnitRange(V01, SkyViewTextureSizeAndInvSize.w / (1.0f - UPPER_PART_FRACTION));
-		V = V01 * (1.0f - UPPER_PART_FRACTION) + UPPER_PART_FRACTION;
-	}
-	
-	return float2(U, V);
-}
-
-#else
-float3 GetSkyViewTextureUvToViewDir(float2 uv)
+float3 GetSkyViewTextureUvToViewDir(float R, float2 uv)
 {
 	float3 Z = float3(0.0f, 1.0f, 0.0f);
 	float3 X = normalize(cross(SkyViewLutUpDir, Z));
@@ -248,6 +148,8 @@ float3 GetSkyViewTextureUvToViewDir(float2 uv)
 
 	// Focus pixels around this height.
 	const float sunPhi = acos(dot(float3(0.0f, 1.0f, 0.0f), SkyViewLutUpDir));
+
+	const float horizonPhi = PI - acos(sqrt(R * R - GroundHeight * GroundHeight) / R);
 
 	float sintheta, costheta;
 	sincos(theta, sintheta, costheta);
@@ -263,7 +165,7 @@ float3 GetSkyViewTextureUvToViewDir(float2 uv)
 		}
 		else
 		{
-			const float range = PI * 0.5f - sunPhi;
+			const float range = horizonPhi - sunPhi;
 			float norm = (uv.y - UPPER_PART_FRACTION * 0.5f) / (UPPER_PART_FRACTION * 0.5f);
 			phi = sunPhi + POW2(norm) * range;
 		}
@@ -271,7 +173,7 @@ float3 GetSkyViewTextureUvToViewDir(float2 uv)
 	else
 	{
 		const float norm = (uv.y - UPPER_PART_FRACTION) / (1.0f - UPPER_PART_FRACTION);
-		phi = 0.5f * PI + norm * 0.5f * PI;
+		phi = horizonPhi + norm * (PI - horizonPhi);
 	}
 
 	float sinphi, cosphi;
@@ -280,7 +182,7 @@ float3 GetSkyViewTextureUvToViewDir(float2 uv)
 	return Z * cosphi + sinphi * -costheta * Y + sinphi * sintheta * X;
 }
 
-float2 GetSkyViewTextureViewDirToUV(float3 ViewDir)
+float2 GetSkyViewTextureViewDirToUV(float R, float3 ViewDir)
 {
 	// Imagine T-pose looking at the sun,
 	// Z is sun, Y is your head-up, X is your right arm
@@ -291,16 +193,17 @@ float2 GetSkyViewTextureViewDirToUV(float3 ViewDir)
 	// Focus pixels around this height.
 	const float sunPhi = FastACos(dot(float3(0.0f, 1.0f, 0.0f), SkyViewLutUpDir));
 	
+	const float horizonPhi = PI - acos(sqrt(R * R - GroundHeight * GroundHeight) / R);
+	
 	float phi = FastACos(dot(ViewDir, Z));
 
 	float x = dot(ViewDir, X);
 	float y = dot(ViewDir, -Y);
 	float theta = FastAtan2(x, y);
 
-
 	float U = sqrt(abs(theta / PI));
 	float V;
-	if (phi < 0.5f * PI)
+	if (phi < horizonPhi)
 	{
 		// Above horizon.
 		
@@ -314,7 +217,7 @@ float2 GetSkyViewTextureViewDirToUV(float3 ViewDir)
 		else
 		{
 			// Below sun.
-			const float range = PI * 0.5f - sunPhi;
+			const float range = horizonPhi - sunPhi;
 			const float norm = sqrt((phi - sunPhi) / range); // 0 At sun, 1.0 at horizon.
 			V = norm * UPPER_PART_FRACTION * 0.5f + UPPER_PART_FRACTION * 0.5f;
 			
@@ -324,8 +227,8 @@ float2 GetSkyViewTextureViewDirToUV(float3 ViewDir)
 	}
 	else
 	{
-		const float range = 0.5f * PI;
-		const float norm = (phi - 0.5f * PI) / range;
+		const float range = PI - horizonPhi;
+		const float norm = (phi - horizonPhi) / range;
 		V = norm * (1.0f - UPPER_PART_FRACTION) + UPPER_PART_FRACTION;
 
 		// Avoid bilinear sampling with upper part.
@@ -334,14 +237,13 @@ float2 GetSkyViewTextureViewDirToUV(float3 ViewDir)
 	
 	return float2(U, V);
 }
-#endif
 
 #if SKYVIEW_SRGB_READABLE
 Texture2D<float4> SrgbSkyViewTexture;
 SamplerState sampler_SrgbSkyViewTexture;
-float4 GetSrgbSkyView(float3 viewDir)
+float4 GetSrgbSkyView(float R, float3 viewDir)
 {
-	return SrgbSkyViewTexture.SampleLevel(sampler_SrgbSkyViewTexture, GetSkyViewTextureViewDirToUV(viewDir), 0.0f);
+	return SrgbSkyViewTexture.SampleLevel(sampler_SrgbSkyViewTexture, GetSkyViewTextureViewDirToUV(R, viewDir), 0.0f);
 }
 #endif
 
@@ -349,9 +251,9 @@ float4 GetSrgbSkyView(float3 viewDir)
 #if SKYVIEW_READABLE
 Texture2D<float4> SkyViewTexture;
 SamplerState sampler_SkyViewTexture;
-float4 GetSkyView(float3 viewDir)
+float4 GetSkyView(float R, float3 viewDir)
 {
-	return SkyViewTexture.SampleLevel(sampler_SkyViewTexture, GetSkyViewTextureViewDirToUV(viewDir), 0.0f);
+	return SkyViewTexture.SampleLevel(sampler_SkyViewTexture, GetSkyViewTextureViewDirToUV(R, viewDir), 0.0f);
 }
 #endif
 

@@ -48,11 +48,12 @@ Shader "Unlit/AbusSampleSkybox"
                 // sample the texture
 				float3 ViewDir = normalize(i.worldPos.xyz - _WorldSpaceCameraPos);
 
+                float3 PlanetPos = float3(0.0f, CaptureHeight, 0.0f);
+                float R = length(PlanetPos);
+
                 {
                     // Sun disc.
 				    float3 LightDir = normalize(AtmosphereLightDirection.xyz);
-                    float3 PlanetPos = _WorldSpaceCameraPos * 1e-3f + float3(0.0f, GroundHeight, 0.0f);
-                    float R = length(PlanetPos);
                     
                     float viewMu = dot(PlanetPos / R, ViewDir);
 
@@ -68,7 +69,7 @@ Shader "Unlit/AbusSampleSkybox"
                     }
                 }
 
-                Color.rgb += GetSrgbSkyView(ViewDir).rgb;
+                Color.rgb += GetSrgbSkyView(R, ViewDir).rgb;
                 
             	return float4(Color.rgb, 1.0f);
             }
