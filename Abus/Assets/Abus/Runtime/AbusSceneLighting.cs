@@ -10,9 +10,9 @@ namespace Abus.Runtime
         private AbusCore core;
         private AbusLutUpdater lutUpdater;
 
-        public bool bUpdateBoundLight;
-        public bool bUpdateAmbient;
-        public bool bUpdateSkybox;
+        public bool UpdateBoundLight = true;
+        public bool UpdateAmbient = true;
+        public bool UpdateSkybox = true;
         public Shader skyboxShader;
 
         Vector3 GetNormalizedAndIntensity(Vector3 srgbColor, out float intensity)
@@ -29,7 +29,7 @@ namespace Abus.Runtime
             if (core == null || lutUpdater == null)
                 return;
 
-            if (bUpdateBoundLight && core.boundLight)
+            if (UpdateBoundLight && core.boundLight)
             {
                 var color = lutUpdater.SunDiscIrradiance;
                 color = GetNormalizedAndIntensity(color, out var intensity);
@@ -37,7 +37,7 @@ namespace Abus.Runtime
                 core.boundLight.color = new Color(color.x, color.y, color.z);
             }
 
-            if (bUpdateAmbient)
+            if (UpdateAmbient)
             {
                 RenderSettings.ambientMode = AmbientMode.Custom;
                 RenderSettings.ambientProbe = lutUpdater.SkyIrradiance;
@@ -47,7 +47,7 @@ namespace Abus.Runtime
                 // RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
             }
 
-            if (bUpdateSkybox && skyboxShader)
+            if (UpdateSkybox && skyboxShader)
             {
                 SetSkybox();
             }
