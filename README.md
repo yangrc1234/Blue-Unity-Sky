@@ -43,13 +43,13 @@ These are features currently be worked on.
 - [ ] Wavelength distribution optimization.  
   - Currently wavelength are chosen uniformly without considering sun radiance of that wavelength. Optimization could be done here.   
 
-## Technical Details
+# Technical Details
 Here's some details about current implementation.
 
 You might need some basic knowledge about atmosphere rendering, to understand these content.  
 If you're interested to know more, I'd like to recommend you Alan Zucconi's great [tutorial](https://www.alanzucconi.com/2017/10/10/atmospheric-scattering/).  
 
-### Spectrum Rendering  
+## Spectrum Rendering  
 In my experiment, spectrum rendering plays an important role for more accurate sky.  
 
 The common solutions in Unity HDRP and UE4, they all uses conventional RGB rendering.  
@@ -61,7 +61,7 @@ while we know that R,G,B in sRGB don't correspond to any actual wavelength. Thes
 
 Also according to the mie theory, when particle size is near with wavelength, there could also be color dispersion. Using spectrum rendering it's easier to catch this difference.   
 
-### Rayleigh  
+## Rayleigh  
 Rayleigh scattering is improved than the common implementation.  
 
 Most common implementation uses 3 pre-computed coefficients for R,G,B scattering, based on [Nishita93].  
@@ -74,7 +74,7 @@ See RayleighUtils.cs for more.
 
 Still there's something I'd like to investigate, like how temperature/humidity would affect air refractive index, and to see if that will affect rayleigh scattering.  
 
-### Ozone
+## Ozone
 Ozone plays a **far more** important role in the simulation than most people think.   
 
 According to [Hulburt53], during sunset/sunrise, 2/3 of the blue color is contributed by ozone layer.  
@@ -87,6 +87,7 @@ Here's a comparison of ozone layer on/off.
 |--------------------------|-------------------------|
 | ![](./Docs/OzoneOff.png) | ![](./Docs/OzoneOn.png) |  
 
+### Density
 In current implementation, the ozone vertical profile is hard-coded as a graph like this:     
 ![](./Docs/OzoneVertical.png)  
 Shape of the graph is based on a graph in [Sonkaew09] claimed to be measured data.  
@@ -94,10 +95,19 @@ Shape of the graph is based on a graph in [Sonkaew09] claimed to be measured dat
 In real life, the ozone layer changes with time and location.    
 So an density slider is given to user to control the ozone density.  
 
-### Mie
+### Absorption Cross-Section  
+Absorption cross-section of ozone highly depends on wavelength. 
+Currently we use data from [Gorshelev14].  
+
+It should be noted that, ozone absorption also changes with temperature.   
+And the atmosphere temperature also changes with height.  
+It's just too complicated to take these into consideration.  
+In current implementation, we just use the data at 233K.    
+
+## Mie
 WIP (This doc).
 
-## References
+# References
 - [Suzuki23] Realistic Real-time Sky Dome Rendering in Gran Turismo 7
 - [Nishita93] Display of The Earth Taking into Account Atmospheric Scattering  
 - [BASM98] Optical Properties of Aerosols and Clouds: The Software Package OPAC  
@@ -106,3 +116,4 @@ WIP (This doc).
 - [Hulburt53] Explanation of the Brightness and Color of the Sky
 - [Bruneton08] Precomputed Atmospheric Scattering
 - [Sonkaew09] Cloud sensitivity studies for stratospheric and lower mesospheric ozone profile retrievals from measurements of limb-scattered solar radiation
+- [Gorshelev14] High spectral resolution ozone absorption cross-sections.
