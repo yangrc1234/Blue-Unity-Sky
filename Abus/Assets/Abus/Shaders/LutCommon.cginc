@@ -137,6 +137,7 @@ float4 SkyViewTextureSizeAndInvSize;
 float3 SkyViewLutUpDir;
 
 #define UPPER_PART_FRACTION 0.75	// How many pixels are for above-horizon
+#define SUN_CENTERED_PIXELS 1	// Center more pixels around sun? This helps with strong mie scattering. 
 
 float3 GetSkyViewTextureUvToViewDir(float R, float2 uv)
 {
@@ -157,6 +158,7 @@ float3 GetSkyViewTextureUvToViewDir(float R, float2 uv)
 	float phi;
 	if (uv.y < UPPER_PART_FRACTION)
 	{
+		#if SUN_CENTERED_PIXELS
 		if (uv.y < UPPER_PART_FRACTION * 0.5f)
 		{
 			const float range = sunPhi;
@@ -169,6 +171,11 @@ float3 GetSkyViewTextureUvToViewDir(float R, float2 uv)
 			float norm = (uv.y - UPPER_PART_FRACTION * 0.5f) / (UPPER_PART_FRACTION * 0.5f);
 			phi = sunPhi + POW2(norm) * range;
 		}
+		#else
+		const float range = horizonPhi;
+		const float norm = uv.y / (UPPER_PART_FRACTION * 0.5f);
+		phi = (1.0f - POW2(1.0f - norm)) * range;
+		#endif
 	}
 	else
 	{
@@ -206,7 +213,7 @@ float2 GetSkyViewTextureViewDirToUV(float R, float3 ViewDir)
 	if (phi < horizonPhi)
 	{
 		// Above horizon.
-		
+		#if SUN_CENTERED_PIXELS
 		if (phi < sunPhi)
 		{
 			// Above sun
@@ -224,6 +231,12 @@ float2 GetSkyViewTextureViewDirToUV(float R, float3 ViewDir)
 			// Avoid bilinear sampling with below part.
 			V -= norm * SkyViewTextureSizeAndInvSize.w * 0.5f; 
 		}
+		#else
+		// Above sun
+		float norm = (phi / horizonPhi);
+		norm = 1.0f - sqrt(1.0f - norm);
+		V = norm * UPPER_PART_FRACTION * 0.5f;
+		#endif
 	}
 	else
 	{

@@ -117,7 +117,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skyViewLutSize: {x: 64, y: 96}
-  transmittanceTextureSize: {x: 128, y: 128}
+  transmittanceTextureSize: {x: 32, y: 128}
   multipleScatteringTextureSize: {x: 32, y: 32}
   captureAltitude: 0
   TransmittanceCS: {fileID: 7200000, guid: bd000332b49fbb94b907a0db5d16e7b3, type: 3}
@@ -156,4 +156,5 @@ MonoBehaviour:
   UpdateBoundLight: 1
   UpdateAmbient: 1
   UpdateSkybox: 1
+  UpdateFogColor: 1
   skyboxShader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}

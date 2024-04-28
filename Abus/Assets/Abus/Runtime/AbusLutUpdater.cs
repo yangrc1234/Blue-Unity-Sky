@@ -15,7 +15,7 @@ namespace Abus.Runtime
     [RequireComponent(typeof(AbusCore))]
     public class AbusLutUpdater : MonoBehaviour
     {
-        [Header("General")] [Range(0.0f, 200.0f)]
+        [Header("General")]
         public Vector2Int skyViewLutSize = new Vector2Int(128, 128);
         public Vector2Int transmittanceTextureSize = new Vector2Int(512, 64);
         public Vector2Int multipleScatteringTextureSize = new Vector2Int(64, 64);
