@@ -83,9 +83,9 @@ This is important for a sunset/sunrise scene.
 
 Here's a comparison of ozone layer on/off.  
 
-| Ozone Off| Ozone On |
-| -------- | -------- |
-| ![](./Docs/OZoneOff.png)   | ![](./Docs/OZoneOn.png)   |  
+| Ozone Off                | Ozone On                |
+|--------------------------|-------------------------|
+| ![](./Docs/OzoneOff.png) | ![](./Docs/OzoneOn.png) |  
 
 In current implementation, the ozone vertical profile is hard-coded as a graph like this:     
 ![](./Docs/OzoneVertical.png)  
