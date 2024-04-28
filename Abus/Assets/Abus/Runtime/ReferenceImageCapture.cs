@@ -1,5 +1,7 @@
 using System.IO;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Abus.Runtime
 {
@@ -119,45 +121,29 @@ namespace Abus.Runtime
             string path = dir + filename;
 
             // Create Render Texture with width and height.
-            RenderTexture rt = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+            RenderTexture rt = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat);
         
             // Assign Render Texture to camera.
-            cam.targetTexture = rt;
-
             cam.clearFlags = CameraClearFlags.Skybox;
         
             // Render the camera's view to the Target Texture.
             cam.Render();
-
-            // Save the currently active Render Texture so we can override it.
-            RenderTexture currentRT = RenderTexture.active;
+            RenderPipeline.SubmitRenderRequest(cam, new RenderPipeline.StandardRequest()
+            {
+                 destination = rt
+            });
 
             // ReadPixels reads from the active Render Texture.
-            RenderTexture.active = cam.targetTexture;
+            RenderTexture.active = rt;
 
             // Make a new texture and read the active Render Texture into it.
             Texture2D screenshot = new Texture2D(width, height, TextureFormat.ARGB32, false);
             screenshot.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
 
-            // PNGs should be sRGB so convert to sRGB color space when rendering in linear.
-            if(QualitySettings.activeColorSpace == ColorSpace.Linear) {
-                Color[] pixels = screenshot.GetPixels();
-                screenshot.SetPixels(pixels);
-            }
-
-            // Apply the changes to the screenshot texture.
-            screenshot.Apply(false);
-
             // Save the screnshot.
             Directory.CreateDirectory(dir);
             byte[] png = screenshot.EncodeToPNG();
             File.WriteAllBytes(path, png);
-
-            // Remove the reference to the Target Texture so our Render Texture is garbage collected.
-            cam.targetTexture = null;
-
-            // Replace the original active Render Texture.
-            RenderTexture.active = currentRT;
 
             Debug.Log("Screenshot saved to: " + path);
         }
