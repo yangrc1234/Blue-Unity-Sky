@@ -18,7 +18,6 @@ namespace Abus.Runtime
         [Header("General")] [Range(0.0f, 200.0f)]
         public float lutHeightBoundary = 80.0f;
         public Vector2Int skyViewLutSize = new Vector2Int(128, 128);
-        public Vector2Int sunFocusLutSize = new Vector2Int(64, 64);
         public Vector2Int transmittanceTextureSize = new Vector2Int(512, 64);
         public Vector2Int multipleScatteringTextureSize = new Vector2Int(64, 64);
 
@@ -475,12 +474,7 @@ namespace Abus.Runtime
             Shader.SetGlobalVector("TransmittanceTextureSizeInvSize", new Vector4(transmittanceTextureSize.x, transmittanceTextureSize.y, 1.0f / transmittanceTextureSize.x, 1.0f / transmittanceTextureSize.y));
             Shader.SetGlobalVector("MultipleScatteringTextureSizeInvSize", new Vector4(multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1.0f / multipleScatteringTextureSize.x, 1.0f / multipleScatteringTextureSize.y));
             Shader.SetGlobalVector("SkyViewTextureSizeAndInvSize", new Vector4(skyViewLutSize.x, skyViewLutSize.y, 1.0f / skyViewLutSize.x, 1.0f / skyViewLutSize.y));
-            Shader.SetGlobalVector("SunFocusTextureSizeAndInvSize", new Vector4(sunFocusLutSize.x, sunFocusLutSize.y, 1.0f / sunFocusLutSize.x, 1.0f / sunFocusLutSize.y));
 
-            var SunFocusAngle = 5.0f;
-            Shader.SetGlobalFloat("SunFocusAngle", Mathf.Deg2Rad * SunFocusAngle);
-            Shader.SetGlobalFloat("CosSunFocusAngle", Mathf.Cos(Mathf.Deg2Rad * SunFocusAngle));
-            
             var zenithAngle = Mathf.Acos(Vector3.Dot(Vector3.up, lightDirection));
             if (zenithAngle > Mathf.Deg2Rad * 88.0f)
             {

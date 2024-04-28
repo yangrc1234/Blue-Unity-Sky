@@ -18,7 +18,6 @@ Shader "Unlit/AbusSampleSkybox"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             
             #define SKYVIEW_SRGB_READABLE 1
-            #define SUNFOCUS_READABLE 1
             #define TRANSMITTANCE_SRGB_READABLE 1
             
             #include "LutCommon.cginc"

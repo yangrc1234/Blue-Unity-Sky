@@ -15,9 +15,6 @@
 #define SKYVIEW_SRGB_READABLE 0
 #endif
 
-#ifndef SUNFOCUS_READABLE
-#define SUNFOCUS_READABLE 0
-#endif
 
 #define POW2(x) ((x) * (x))
 
@@ -358,64 +355,3 @@ float4 GetSkyView(float3 viewDir)
 }
 #endif
 
-
-/*****************************
- * Sun Focus Texture
-*****************************/
-float4 SunFocusTextureSizeAndInvSize;
-float SunFocusAngle;
-float CosSunFocusAngle;
-
-float3 GetSunFocusTextureUvToViewDir(float2 uv)
-{
-	// Imagine T-pose looking at the sun,
-	// Z is sun, Y is your head-up, X is your right arm
-	float3 Z = AtmosphereLightDirection;
-	float3 X = normalize(cross(Z, float3(0.0f, 1.0f, 0.0f)));
-	float3 Y = cross(X, Z);
-
-	float theta = uv.x * PI;	// Starts at Y-, rotate towards X+.
-	
-	float sintheta, costheta;
-	sincos(theta, sintheta, costheta);
-
-	// Make sure outer-most pixel stores info on outer-most sample.
-	float y = POW2(uv.y / (1.0f - 0.5f * SunFocusTextureSizeAndInvSize.w)); 
-	float phi = y * SunFocusAngle;
-
-	float sinphi, cosphi;
-	sincos(phi, sinphi, cosphi);
-
-	return Z * cosphi + sinphi * -costheta * Y + sinphi * sintheta * X;
-}
-
-float2 GetSunFocusTextureViewDirToUV(float3 ViewDir)
-{
-	// Imagine T-pose looking at the sun,
-	// Z is sun, Y is your head-up, X is your right arm
-	float3 Z = AtmosphereLightDirection;
-	float3 X = normalize(cross(Z, float3(0.0f, 1.0f, 0.0f)));
-	float3 Y = cross(X, Z);
-
-	float phi = acos(dot(ViewDir, Z));
-
-	float x = dot(ViewDir, X);
-	float y = dot(ViewDir, -Y);
-	float theta = atan2(x, y);
-
-	float U = abs(theta) / PI;
-	float V = SafeSqrt(phi / SunFocusAngle);
-	// Make sure outer-most sample is on pixel center.
-	V *= 1.0f - 0.5f * SunFocusTextureSizeAndInvSize.w;
-	
-	return float2(U, V);
-}
-
-#if SUNFOCUS_READABLE
-Texture2D<float4> SunFocusTexture;
-SamplerState sampler_SunFocusTexture;
-float3 GetSrgbSunFocus(float3 viewDir)
-{
-	return SunFocusTexture.SampleLevel(sampler_SunFocusTexture, GetSunFocusTextureViewDirToUV(viewDir), 0.0f);
-}
-#endif

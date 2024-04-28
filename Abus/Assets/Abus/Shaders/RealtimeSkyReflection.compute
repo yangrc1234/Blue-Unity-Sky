@@ -141,19 +141,6 @@ float4 SumColor(uint ThreadId, float4 Radiance)
     return float4(SharedRadianceA[0], SharedRadianceB[0], SharedRadianceC[0], SharedRadianceD[0]);
 }
 
-float CalculateRadianceTransferMask(float3 ViewDirection)
-{
-    // Calculate a mask for whole sky,
-    // The mask is centered at sun direction,
-    // For radiance inside this mask, we will transfer its radiance to directional light.
-    const float SunFocusMaskEnd = SunFocusAngle;  // Outer of the mask
-    const float SunFocusMaskStart = max(0.0f, SunFocusAngle - DegToRad(1.0f)); // Inner of the mask. hard code the fade area to 1.0 degrees for now.
-    const float CurrentSunFocusPosition = FastACos(dot(ViewDirection, AtmosphereLightDirection));
-    // Mask of "how much radiance should be transferred to directional light, if overflowed".
-    const float TransferMask = 1.0f - saturate((CurrentSunFocusPosition - SunFocusMaskStart) / (SunFocusMaskEnd - SunFocusMaskStart));
-    return TransferMask;
-}
-
 struct FThreeBandSHVector
 {
     float4 V0;
