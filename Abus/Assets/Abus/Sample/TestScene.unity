@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 0.031577904
   m_AmbientMode: 4
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 965864413}
+  m_SkyboxMaterial: {fileID: 1205167689}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.00943438, g: 0.012722735, b: 0.019964833, a: 1}
+  m_IndirectSpecularColor: {r: 0.019067295, g: 0.02171332, b: 0.030298144, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -288,35 +288,6 @@ MonoBehaviour:
   UtilShaders: {fileID: 7200000, guid: bb8c2499d4c54dce81efe637326383e7, type: 3}
   SceneLightingCS: {fileID: 7200000, guid: f69da212ebe242c398bdca44550a5844, type: 3}
   numWavelengths: 16
-  SunDiscIrradiance: {x: 0.016097806, y: 0.0011438135, z: -0.00040946377}
-  SkyIrradiance:
-    sh[ 0]: 0.00943438
-    sh[ 1]: 0.0058206907
-    sh[ 2]: 0.0009370045
-    sh[ 3]: -0.00016952044
-    sh[ 4]: 0
-    sh[ 5]: 0
-    sh[ 6]: 0
-    sh[ 7]: 0
-    sh[ 8]: 0
-    sh[ 9]: 0.012722735
-    sh[10]: 0.0092496965
-    sh[11]: 0.0005525713
-    sh[12]: -0.000100621364
-    sh[13]: 0
-    sh[14]: 0
-    sh[15]: 0
-    sh[16]: 0
-    sh[17]: 0
-    sh[18]: 0.019964833
-    sh[19]: 0.016776003
-    sh[20]: 0.00043581828
-    sh[21]: -0.000035534507
-    sh[22]: 0
-    sh[23]: 0
-    sh[24]: 0
-    sh[25]: 0
-    sh[26]: 0
 --- !u!114 &134787725
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -342,53 +313,48 @@ MonoBehaviour:
   ozoneAbsorptionCrossSection: {fileID: 11400000, guid: c391af5372e75b748bc6077dac05d927,
     type: 2}
   oZoneDensityScale: 1
-  Aerosols:
+  AerosolComponents:
   - RefractiveIndex:
       real: 1.53
       imag: -0.008
     radiusUm: 2.5623977
     radiusGeometricDeviation: 2.51
     geometryCrossSection: 0.008250931
-    PBLThickness: 2
+    heightType: 0
     scaleHeightKM: 8
-    IsTransported: 0
   - RefractiveIndex:
       real: 1.4
       imag: -0.002
     radiusUm: 0.077851854
     radiusGeometricDeviation: 2.24
     geometryCrossSection: 0.1332864
-    PBLThickness: 2
+    heightType: 0
     scaleHeightKM: 8
-    IsTransported: 0
   - RefractiveIndex:
       real: 1.75
       imag: -0.44
     radiusUm: 0.030845951
     radiusGeometricDeviation: 2
     geometryCrossSection: 0.024809862
-    PBLThickness: 2
+    heightType: 0
     scaleHeightKM: 8
-    IsTransported: 0
   - RefractiveIndex:
       real: 1.75
       imag: -0.44
     radiusUm: 0.030845951
     radiusGeometricDeviation: 2
     geometryCrossSection: 0
-    PBLThickness: 2
+    heightType: 0
     scaleHeightKM: 100
-    IsTransported: 0
   - RefractiveIndex:
       real: 1.53
       imag: -0.0055
     radiusUm: 1.36
     radiusGeometricDeviation: 0
     geometryCrossSection: 0
-    PBLThickness: 6
+    heightType: 0
     scaleHeightKM: 2
-    IsTransported: 0
-  PlanetBoundaryLayerHeight: 0
+  PlanetBoundaryLayerHeight: 2
 --- !u!114 &134787726
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -415,9 +381,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90ede191071e467aad2753af041abfd9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bUpdateBoundLight: 1
-  bUpdateAmbient: 1
-  bUpdateSkybox: 1
+  UpdateBoundLight: 1
+  UpdateAmbient: 1
+  UpdateSkybox: 1
   skyboxShader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
 --- !u!1 &180836268
 GameObject:
@@ -448,8 +414,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.071054, b: -0.025435997, a: 1}
-  m_Intensity: 0.016097806
+  m_Color: {r: 1, g: 0.21212474, b: -0.019313043, a: 1}
+  m_Intensity: 0.38747627
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -507,13 +473,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 180836268}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.9520057, y: 0.29730058, z: 0.06800058, w: 0.025952753}
+  m_LocalRotation: {x: 0.9440038, y: 0.32137373, z: 0.063370675, w: 0.039496567}
   m_LocalPosition: {x: 1.75, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 179.485, y: -8.332001, z: -34.723022}
+  m_LocalEulerAnglesHint: {x: 178.061, y: -8.343994, z: -37.742004}
 --- !u!114 &180836271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -537,37 +503,6 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
---- !u!21 &965864413
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Unlit/AbusSampleSkybox
-  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats: []
-    m_Colors: []
-  m_BuildTextureStacks: []
 --- !u!1 &1005276337
 GameObject:
   m_ObjectHideFlags: 0
@@ -673,6 +608,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!21 &1205167689
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Unlit/AbusSampleSkybox
+  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats: []
+    m_Colors: []
+  m_BuildTextureStacks: []
 --- !u!1 &1292811484
 GameObject:
   m_ObjectHideFlags: 0

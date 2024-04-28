@@ -41,7 +41,7 @@ namespace Abus.Runtime
                 return;
             
             // Clear all aerosol components.
-            foreach (var aerosol in core.Aerosols)
+            foreach (var aerosol in core.AerosolComponents)
             {
                 aerosol.geometryCrossSection = 0.0f;
             }
@@ -54,17 +54,17 @@ namespace Abus.Runtime
                 {
                     if (entry.component)
                     {
-                        if (Index >= core.Aerosols.Count)
+                        if (Index >= core.AerosolComponents.Count)
                         {
-                            core.Aerosols.Add(new ());
+                            core.AerosolComponents.Add(new ());
                         }
-                        core.Aerosols[Index].heightType = EAerosolHeightType.PlanetBoundaryLayer;
-                        core.Aerosols[Index].scaleHeightKM = MainProfile.scaleHeightKM;
+                        core.AerosolComponents[Index].heightType = EAerosolHeightType.PlanetBoundaryLayer;
+                        core.AerosolComponents[Index].scaleHeightKM = MainProfile.scaleHeightKM;
                         var surfaceAreaDistributionGeometryMean = entry.component.GetSurfaceAreaDistributionGeometricMean();
-                        core.Aerosols[Index].geometryCrossSection = OverallIntensity * entry.NumberPerCM3 * Mathf.PI * surfaceAreaDistributionGeometryMean * surfaceAreaDistributionGeometryMean * 1e-3f;
-                        core.Aerosols[Index].radiusUm = surfaceAreaDistributionGeometryMean;
-                        core.Aerosols[Index].radiusGeometricDeviation = entry.component.geometricDeviation;
-                        core.Aerosols[Index].RefractiveIndex = entry.component.RefractiveIndexData.CalculateValueAtWavelength(550.0f);
+                        core.AerosolComponents[Index].geometryCrossSection = OverallIntensity * entry.NumberPerCM3 * Mathf.PI * surfaceAreaDistributionGeometryMean * surfaceAreaDistributionGeometryMean * 1e-3f;
+                        core.AerosolComponents[Index].radiusUm = surfaceAreaDistributionGeometryMean;
+                        core.AerosolComponents[Index].radiusGeometricDeviation = entry.component.geometricDeviation;
+                        core.AerosolComponents[Index].RefractiveIndex = entry.component.RefractiveIndexData.CalculateValueAtWavelength(550.0f);
                         Index++;
                     }
                 }

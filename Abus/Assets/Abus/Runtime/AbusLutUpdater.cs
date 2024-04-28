@@ -128,7 +128,9 @@ namespace Abus.Runtime
 
         private AsyncGPUReadbackRequest ReadbackRequest;
         private GraphicsBuffer ReadbackBuffer;
+        [NonSerialized]
         public Vector3 SunDiscIrradiance;
+        [NonSerialized]
         public SphericalHarmonicsL2 SkyIrradiance;
 
         private void OnDestroy()
@@ -295,18 +297,18 @@ namespace Abus.Runtime
 
         Texture2D CreateMieWavelengthLut()
         {
-            var lut = new Texture2D(core.Aerosols.Count, numWavelengths, TextureFormat.RGBAFloat, false);
+            var lut = new Texture2D(core.AerosolComponents.Count, numWavelengths, TextureFormat.RGBAFloat, false);
             lut.name = "Mie Wavelength";
             lut.filterMode = FilterMode.Bilinear;
             lut.wrapMode = TextureWrapMode.Clamp;
 
-            for (int iMieType = 0; iMieType < core.Aerosols.Count; iMieType++)
+            for (int iMieType = 0; iMieType < core.AerosolComponents.Count; iMieType++)
             {
-                var radiusUM = core.Aerosols[iMieType].radiusUm;
+                var radiusUM = core.AerosolComponents[iMieType].radiusUm;
                 for (int iWavelength = 0; iWavelength < numWavelengths; iWavelength++)
                 {
                     var wavelength = GetIterateWavelengthNM(iWavelength);
-                    var refractiveIndex = core.Aerosols[iMieType].RefractiveIndex;
+                    var refractiveIndex = core.AerosolComponents[iMieType].RefractiveIndex;
 
                     double SumExtEfficiency = 0.0, SumScatEfficiency = 0.0, Sumg = 0.0;
                     double SumWeight = 0.0f;
@@ -324,8 +326,8 @@ namespace Abus.Runtime
                         var sizeParameter = 2.0f * Mathf.PI * currentSize / (1e-3f * wavelength);
                         
                         MieUtils.CalculateMie(sizeParameter, refractiveIndex, null, out var ExtEfficiency, out var ScatEfficiency, out var BackScatEfficiency, out var g, null, null);
-                        var weight = CommonUtils.LogNormalPDFFromGeometric(core.Aerosols[iMieType].radiusUm,
-                            core.Aerosols[iMieType].radiusGeometricDeviation, currentSize);
+                        var weight = CommonUtils.LogNormalPDFFromGeometric(core.AerosolComponents[iMieType].radiusUm,
+                            core.AerosolComponents[iMieType].radiusGeometricDeviation, currentSize);
                         SumWeight += weight;
                         SumScatEfficiency += ScatEfficiency * weight;
                         SumExtEfficiency += ExtEfficiency * weight;
@@ -345,16 +347,16 @@ namespace Abus.Runtime
         
         Texture2D CreateMiePropertiesLut()
         {
-            var lut = new Texture2D(core.Aerosols.Count, 2, TextureFormat.RGBAFloat, false);
+            var lut = new Texture2D(core.AerosolComponents.Count, 2, TextureFormat.RGBAFloat, false);
             lut.name = "Mie Properties";
-            for (int iMieType = 0; iMieType < core.Aerosols.Count; iMieType++)
+            for (int iMieType = 0; iMieType < core.AerosolComponents.Count; iMieType++)
             {
-                var radius = core.Aerosols[iMieType].radiusUm;
-                var geometryCrossSectionKM = core.Aerosols[iMieType].geometryCrossSection;
+                var radius = core.AerosolComponents[iMieType].radiusUm;
+                var geometryCrossSectionKM = core.AerosolComponents[iMieType].geometryCrossSection;
 
-                float HeightProfileInfo = (int)core.Aerosols[iMieType].heightType;
-                lut.SetPixel(iMieType, 0, new Vector4(geometryCrossSectionKM, HeightProfileInfo, 0.0f, core.Aerosols[iMieType].scaleHeightKM));
-                lut.SetPixel(iMieType, 1, radius > 1.5f ? MieUtils.JEPhaseParams(core.Aerosols[iMieType].radiusUm) : Color.black);
+                float HeightProfileInfo = (int)core.AerosolComponents[iMieType].heightType;
+                lut.SetPixel(iMieType, 0, new Vector4(geometryCrossSectionKM, HeightProfileInfo, 0.0f, core.AerosolComponents[iMieType].scaleHeightKM));
+                lut.SetPixel(iMieType, 1, radius > 1.5f ? MieUtils.JEPhaseParams(core.AerosolComponents[iMieType].radiusUm) : Color.black);
             }
 
             lut.Apply();
@@ -491,7 +493,7 @@ namespace Abus.Runtime
 
             Shader.SetGlobalTexture("MieProperties", miePropertiesLut);
             Shader.SetGlobalTexture("MieWavelengthLut", MieWavelengthLut);
-            Shader.SetGlobalInteger("NumMieTypes", core.Aerosols.Count);
+            Shader.SetGlobalInteger("NumMieTypes", core.AerosolComponents.Count);
             Shader.SetGlobalFloat("PlanetBoundaryLayerHeight", core.PlanetBoundaryLayerHeight);
             
             

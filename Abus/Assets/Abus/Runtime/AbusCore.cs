@@ -113,8 +113,8 @@ namespace Abus.Runtime
                 return OZoneStratosphereTopDensity * Mathf.Exp(-(AltitudeKM - 35.0f) / OZoneUpperHeightScale);
         }
         
-        [FormerlySerializedAs("MieParticles")] [Header("Aerosols")]
-        public List<InstancedAtmosphereAerosolComponent> Aerosols;
+        [FormerlySerializedAs("Aerosols")] [FormerlySerializedAs("MieParticles")] [Header("Aerosols")]
+        public List<InstancedAtmosphereAerosolComponent> AerosolComponents;
 
         public float PlanetBoundaryLayerHeight;
         #endregion
