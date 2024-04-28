@@ -1,0 +1,159 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4494686326724606607
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5412899386024140017}
+  - component: {fileID: 2923311620115958321}
+  - component: {fileID: 2644939007331481584}
+  - component: {fileID: 2713125536555039435}
+  - component: {fileID: 8962954679026010369}
+  m_Layer: 0
+  m_Name: P_SampleSceneAbusManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5412899386024140017
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4494686326724606607}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.5088026, y: -0.8011805, z: 0.28913143, w: -0.12503164}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 19.637, y: 508.324, z: -70.458}
+--- !u!114 &2923311620115958321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4494686326724606607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58264cedea074e5bb3bae3a31c21214d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PlanetRadius: 6371
+  AtmosphereHeight: 100
+  solarIrradianceTable: {fileID: 11400000, guid: b36941fb3f2a1144cbf5834cf3030871,
+    type: 2}
+  solarIrradianceScale: 0.1
+  boundLight: {fileID: 0}
+  sunAngularDiameter: 0.533
+  groundAlbedo: {fileID: 11400000, guid: b65af96f71b7eca4f865c9da2862e3fe, type: 2}
+  RayleighScaleHeight: 8
+  RayleighDensityScale: 1
+  RayleighDepolarizationFactor: {fileID: 11400000, guid: b6b3df2f082e8f34dacf8a443a3d5119,
+    type: 2}
+  ozoneAbsorptionCrossSection: {fileID: 11400000, guid: c391af5372e75b748bc6077dac05d927,
+    type: 2}
+  oZoneDensityScale: 1
+  AerosolComponents:
+  - RefractiveIndex:
+      real: 1.53
+      imag: -0.008
+    radiusUm: 2.5623977
+    radiusGeometricDeviation: 2.51
+    geometryCrossSection: 0.012376398
+    heightType: 0
+    scaleHeightKM: 8
+  - RefractiveIndex:
+      real: 1.4
+      imag: -0.002
+    radiusUm: 0.077851854
+    radiusGeometricDeviation: 2.24
+    geometryCrossSection: 0.2989424
+    heightType: 0
+    scaleHeightKM: 8
+  - RefractiveIndex:
+      real: 1.75
+      imag: -0.44
+    radiusUm: 0.030845951
+    radiusGeometricDeviation: 2
+    geometryCrossSection: 0.1025275
+    heightType: 0
+    scaleHeightKM: 8
+  - RefractiveIndex:
+      real: 1.75
+      imag: -0.44
+    radiusUm: 0.030845951
+    radiusGeometricDeviation: 2
+    geometryCrossSection: 0
+    heightType: 0
+    scaleHeightKM: 1
+  - RefractiveIndex:
+      real: 1.53
+      imag: -0.0055
+    radiusUm: 1.36
+    radiusGeometricDeviation: 0
+    geometryCrossSection: 0
+    heightType: 0
+    scaleHeightKM: 2
+  PlanetBoundaryLayerHeight: 2
+--- !u!114 &2644939007331481584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4494686326724606607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3669a7eb53ec4598a21ca6af6b32eaa0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skyViewLutSize: {x: 64, y: 96}
+  transmittanceTextureSize: {x: 128, y: 128}
+  multipleScatteringTextureSize: {x: 32, y: 32}
+  captureAltitude: 0
+  TransmittanceCS: {fileID: 7200000, guid: bd000332b49fbb94b907a0db5d16e7b3, type: 3}
+  MultipleScatteringCS: {fileID: 7200000, guid: 4f2029dc6ccc42c79d8523b075064198,
+    type: 3}
+  SkyViewCS: {fileID: 7200000, guid: 451358c4051e479d816b4c58645ca093, type: 3}
+  UtilShaders: {fileID: 7200000, guid: bb8c2499d4c54dce81efe637326383e7, type: 3}
+  SceneLightingCS: {fileID: 7200000, guid: f69da212ebe242c398bdca44550a5844, type: 3}
+  numWavelengths: 16
+--- !u!114 &2713125536555039435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4494686326724606607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 525162b870cb45cc825d927e50debbfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OverallIntensity: 1
+  MainProfile: {fileID: 11400000, guid: aa4410291b61b86428c897fad28b690e, type: 2}
+--- !u!114 &8962954679026010369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4494686326724606607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90ede191071e467aad2753af041abfd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UpdateBoundLight: 1
+  UpdateAmbient: 1
+  UpdateSkybox: 1
+  skyboxShader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
