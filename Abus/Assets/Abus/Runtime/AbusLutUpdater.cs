@@ -74,13 +74,18 @@ namespace Abus.Runtime
 
         protected virtual void Update()
         {
+            UpdateLuts();
+        }
+
+        public virtual void UpdateLuts()
+        {
             InitializeIfNot();
 
             if (!PrepareRenderingLuts())
             {
                 return;
             }
-            RenderLuts();
+            DoRenderLuts();
         }
 
         private RenderTexture _transmittanceRT;
@@ -92,7 +97,7 @@ namespace Abus.Runtime
         public RenderTexture SrgbSkyViewLut => _srgbSkyViewLut;
         public RenderTexture SrgbTransmittanceLut => _SRGBtransmittanceRT;
 
-        public void RenderLuts()
+        public void DoRenderLuts()
         {
             UpdateGlobalAtmosphereShaderParameters();
 
