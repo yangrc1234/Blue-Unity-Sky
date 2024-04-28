@@ -17,7 +17,7 @@ namespace Abus.Runtime
         public Entry[] entries;
         
         [FormerlySerializedAs("Thickness")] [Header("Vertical Profile")]
-        public float PlanetBoundaryLayerHeight = 2.0f;
+        public float PlanetBoundaryLayerAltitude = 2.0f;
         [Range(0.01f, 100.0f)]
         public float scaleHeightKM = 8.0f;
 

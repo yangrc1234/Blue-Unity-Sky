@@ -69,7 +69,7 @@ namespace Abus.Runtime
                     }
                 }
 
-                core.PlanetBoundaryLayerHeight = MainProfile.PlanetBoundaryLayerHeight;
+                core.PlanetBoundaryLayerAltitude = MainProfile.PlanetBoundaryLayerAltitude;
             }
             
             core.MarkSettingsDirty();

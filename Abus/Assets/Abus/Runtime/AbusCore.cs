@@ -121,7 +121,7 @@ namespace Abus.Runtime
         [FormerlySerializedAs("Aerosols")] [FormerlySerializedAs("MieParticles")] [Header("Aerosols")]
         public List<InstancedAtmosphereAerosolComponent> AerosolComponents;
 
-        public float PlanetBoundaryLayerHeight;
+        public float PlanetBoundaryLayerAltitude;
         #endregion
         
         #if UNITY_EDITOR

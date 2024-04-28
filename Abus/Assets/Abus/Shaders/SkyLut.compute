@@ -3,7 +3,7 @@
 
 #include "LutCommon.cginc"
 
-#define NUM_SAMPLE_STEPS 32
+#define NUM_SAMPLE_STEPS 16
 
 #define HIGHER_SAMPLE_AT_BOUNDARY_LAYER 1
 
@@ -56,14 +56,19 @@ float4 Integrate(float OriginHeight, float3 ViewDir)
     float4 TransmittanceToOrigin = 1.0f;
 
     const float3 Step = IntegrateDistance * ViewDir / NUM_SAMPLE_STEPS;
+    
     for (int iStep = 0; iStep < NUM_SAMPLE_STEPS; iStep++)
     {
+        const float3 SampleStart = float3(0.0f, OriginHeight, 0.0f) + (iStep) * Step; 
         const float3 SamplePos = float3(0.0f, OriginHeight, 0.0f) + (iStep + 0.5f) * Step;
+        const float3 SampleEnd = float3(0.0f, OriginHeight, 0.0f) + (iStep + 1.0f) * Step;
 
-        const float DistanceToPBLTop = abs(length(SamplePos) - GroundHeight - PlanetBoundaryLayerHeight); 
-        if (HIGHER_SAMPLE_AT_BOUNDARY_LAYER && DistanceToPBLTop < PLANET_BOUNDARY_LAYER_FADE_HEIGHT * 2.0f)
+        // Take more samples when crossing the boundary layer.
+        bool bCrossingPlanetBoundaryLayer = (abs((length(SamplePos) - GroundHeight) - PlanetBoundaryLayerAltitude) < PLANET_BOUNDARY_LAYER_FADE_HEIGHT * 3.0f) || (length(SampleStart) - GroundHeight > PlanetBoundaryLayerAltitude) != (length(SampleEnd) - GroundHeight > PlanetBoundaryLayerAltitude); 
+
+        if (bCrossingPlanetBoundaryLayer)
         {
-            const int SubStepNum = 3;
+            const int SubStepNum = 8;
             for (int iSubstep = 0; iSubstep < SubStepNum; iSubstep++)
             {
                 const float3 SamplePos1 = float3(0.0f, OriginHeight, 0.0f) + (iStep + (iSubstep + 0.5f) / SubStepNum) * Step;

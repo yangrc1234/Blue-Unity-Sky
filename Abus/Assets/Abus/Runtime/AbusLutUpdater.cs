@@ -489,7 +489,7 @@ namespace Abus.Runtime
             Shader.SetGlobalTexture("MieProperties", miePropertiesLut);
             Shader.SetGlobalTexture("MieWavelengthLut", MieWavelengthLut);
             Shader.SetGlobalInteger("NumMieTypes", core.AerosolComponents.Count);
-            Shader.SetGlobalFloat("PlanetBoundaryLayerHeight", core.PlanetBoundaryLayerHeight);
+            Shader.SetGlobalFloat("PlanetBoundaryLayerAltitude", core.PlanetBoundaryLayerAltitude);
             
             
             Shader.SetGlobalFloat("OZoneLowerDensity", core.OZoneLowerDensity);

@@ -222,7 +222,7 @@ float4 SampleRayleigh(float Height)
 Texture2D<float4> MieProperties;
 Texture2D<float4> MieWavelengthLut;
 int NumMieTypes;
-float PlanetBoundaryLayerHeight;
+float PlanetBoundaryLayerAltitude;
 #define PLANET_BOUNDARY_LAYER_FADE_HEIGHT 1.5
 
 #include "JEPhaseFunction.cginc"
@@ -263,9 +263,9 @@ float GetAerosolHeightProfile(float SampleHeight, float HeightProfileInfo, float
     {
         // The height distribution model from BAMS98 has a step at PBL boundary.
         // We need to do a smooth transition near boundary to avoid artifacts.
-        const float FadeMask = saturate(((Altitude - PlanetBoundaryLayerHeight) / PLANET_BOUNDARY_LAYER_FADE_HEIGHT + 1.0f) * 0.5f);
+        const float FadeMask = saturate(((Altitude - PlanetBoundaryLayerAltitude) / PLANET_BOUNDARY_LAYER_FADE_HEIGHT + 1.0f) * 0.5f);
         
-        return GetScaleHeight(Altitude - PlanetBoundaryLayerHeight, ScaleHeight) * (1.0f - FadeMask);
+        return GetScaleHeight(Altitude - PlanetBoundaryLayerAltitude, ScaleHeight) * (1.0f - FadeMask);
     }
     else
     {
