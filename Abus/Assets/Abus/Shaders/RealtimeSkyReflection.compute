@@ -212,14 +212,8 @@ void MainCS(uint3 id : SV_DispatchThreadID)
     // This assume scene lighting is composed of directional light and skylight(ambient) part.
     // Most common method is to calculate transmittance towards the sun as directional light,
     // Then integrate(or project onto spherical harmonics) over sky view LUT as skylight value.
-    //
-    // This method has a major flaw, when the sky contains strong mie forward scattering, it will greatly affect skylight intensity, causing somewhat light leaking result on those receive-ambient-only surface.
-    //
-    // To solve this, here we try a new method, regard radiance around the sun as part of directional light.
-    // This gives a more "correct" directional light intensity, also reduce the skylight light leaking problem.
-    //
-    // To achieve this, we first process skylight, to see the average value of skylight,
-    // Then, for sky area around the sun, if the radiance is bigger than this average value, we think the "overflow" part belongs to the directional light.
+    // 
+    // We do a more correct integration, by sampling in shader with GPU.
     
     float2 Random = R2Sequence(id.x);
 
