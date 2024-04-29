@@ -25,6 +25,33 @@ namespace Abus.Runtime
         
         private void Update()
         {
+            UpdateLighting();
+        }
+
+        private void SetFogColor()
+        {
+            RenderSettings.fogColor = new Color(lutUpdater.SkyIrradiance[0, 0], lutUpdater.SkyIrradiance[1, 0], lutUpdater.SkyIrradiance[2, 0], 1.0f);
+        }
+
+
+        private Material skyboxMaterial;
+        public void SetSkybox()
+        {
+            if (lutUpdater.SrgbSkyViewLut == null)
+                return;
+            
+            if (skyboxMaterial == null || skyboxMaterial.shader != skyboxShader)
+            {
+                skyboxMaterial = new Material(skyboxShader);
+            }
+            skyboxMaterial.SetTexture("SrgbSkyViewTexture", lutUpdater.SrgbSkyViewLut);
+            skyboxMaterial.SetTexture("SRGBTransmittanceTexture", lutUpdater.SrgbTransmittanceLut);
+            
+            RenderSettings.skybox = skyboxMaterial;
+        }
+
+        public virtual void UpdateLighting()
+        {
             core = GetComponent<AbusCore>();
             lutUpdater = GetComponent<AbusLutUpdater>();
             if (core == null || lutUpdater == null)
@@ -57,28 +84,6 @@ namespace Abus.Runtime
             {
                 SetFogColor();
             }
-        }
-
-        private void SetFogColor()
-        {
-            RenderSettings.fogColor = new Color(lutUpdater.SkyIrradiance[0, 0], lutUpdater.SkyIrradiance[1, 0], lutUpdater.SkyIrradiance[2, 0], 1.0f);
-        }
-
-
-        private Material skyboxMaterial;
-        public void SetSkybox()
-        {
-            if (lutUpdater.SrgbSkyViewLut == null)
-                return;
-            
-            if (skyboxMaterial == null || skyboxMaterial.shader != skyboxShader)
-            {
-                skyboxMaterial = new Material(skyboxShader);
-            }
-            skyboxMaterial.SetTexture("SrgbSkyViewTexture", lutUpdater.SrgbSkyViewLut);
-            skyboxMaterial.SetTexture("SRGBTransmittanceTexture", lutUpdater.SrgbTransmittanceLut);
-            
-            RenderSettings.skybox = skyboxMaterial;
         }
     }
 }

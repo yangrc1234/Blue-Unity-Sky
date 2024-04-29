@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -103,7 +105,8 @@ namespace Abus.Runtime
             {
                 abusCore.boundLight.transform.rotation = imageSetting.SunPose.rotation;
 
-                abusCore.GetComponent<AbusLutUpdater>().UpdateLuts();
+                abusCore.GetComponent<AbusLutUpdater>().UpdateLuts(true);
+                abusCore.GetComponent<AbusSceneLighting>().UpdateLighting();
             
                 foreach (var pose in cameraPoses)
                 {

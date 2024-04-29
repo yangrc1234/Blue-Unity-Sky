@@ -77,7 +77,7 @@ namespace Abus.Runtime
             UpdateLuts();
         }
 
-        public virtual void UpdateLuts()
+        public virtual void UpdateLuts(bool forceFlushReadback = false)
         {
             InitializeIfNot();
 
@@ -85,7 +85,7 @@ namespace Abus.Runtime
             {
                 return;
             }
-            DoRenderLuts();
+            DoRenderLuts(forceFlushReadback);
         }
 
         private RenderTexture _transmittanceRT;
@@ -97,13 +97,13 @@ namespace Abus.Runtime
         public RenderTexture SrgbSkyViewLut => _srgbSkyViewLut;
         public RenderTexture SrgbTransmittanceLut => _SRGBtransmittanceRT;
 
-        public void DoRenderLuts()
+        public void DoRenderLuts(bool forceFlushReadback = false)
         {
             UpdateGlobalAtmosphereShaderParameters();
 
             TryFinishReadbackRequest();
 
-            bool bUpdateReadbackBuffer = ReadbackRequest.hasError || ReadbackRequest.done;
+            bool bUpdateReadbackBuffer = ReadbackRequest.hasError || ReadbackRequest.done || forceFlushReadback;
             
             // Clear sky view LUT.
             ClearRT(_srgbSkyViewLut);
@@ -129,6 +129,12 @@ namespace Abus.Runtime
 
             if (bUpdateReadbackBuffer)
                 ReadbackRequest = AsyncGPUReadback.Request(ReadbackBuffer, 10 * 16, 0);
+
+            if (forceFlushReadback)
+            {
+                ReadbackRequest.WaitForCompletion();
+                TryFinishReadbackRequest();
+            }
         }
 
         private AsyncGPUReadbackRequest ReadbackRequest;
