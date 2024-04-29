@@ -89,11 +89,11 @@ namespace Abus.Runtime
         }
 
         private RenderTexture _transmittanceRT;
-        private RenderTexture _SRGBtransmittanceRT;
+        private RenderTexture _srgbtransmittanceRT;
         private RenderTexture _multipleScatteringLut;
         private RenderTexture _srgbSkyViewLut;
         public RenderTexture SrgbSkyViewLut => _srgbSkyViewLut;
-        public RenderTexture SrgbTransmittanceLut => _SRGBtransmittanceRT;
+        public RenderTexture SrgbTransmittanceLut => _srgbtransmittanceRT;
 
         public void DoRenderLuts(bool forceFlushReadback = false)
         {
@@ -105,7 +105,7 @@ namespace Abus.Runtime
             
             // Clear sky view LUT.
             ClearRT(_srgbSkyViewLut);
-            ClearRT(_SRGBtransmittanceRT);
+            ClearRT(_srgbtransmittanceRT);
 
             if (bUpdateReadbackBuffer)
                 ClearReadbackBuffer();
@@ -207,7 +207,7 @@ namespace Abus.Runtime
         private void RunSceneLightingUpdatePass()
         {
             SceneLightingCS.SetTexture(0, "SrgbSkyViewTexture", _srgbSkyViewLut);
-            SceneLightingCS.SetTexture(0, "SRGBTransmittanceTexture", _SRGBtransmittanceRT);
+            SceneLightingCS.SetTexture(0, "SRGBTransmittanceTexture", _srgbtransmittanceRT);
             SceneLightingCS.SetBuffer(0, "OutReadbackBuffer", ReadbackBuffer);
             SceneLightingCS.Dispatch(0, new Vector3Int(1, 1, 1));
         }
@@ -221,7 +221,7 @@ namespace Abus.Runtime
 
         private void ResolveSRGBTransmittanceLUT()
         {
-            TransmittanceCS.SetTexture(2, "OutSRGBTransmittance", _SRGBtransmittanceRT);
+            TransmittanceCS.SetTexture(2, "OutSRGBTransmittance", _srgbtransmittanceRT);
             TransmittanceCS.Dispatch(2, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
         }
 
@@ -276,7 +276,7 @@ namespace Abus.Runtime
             DirtyFlags = 0;
 
             CommonUtils.CreateLUT(ref _transmittanceRT, "Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
-            CommonUtils.CreateLUT(ref _SRGBtransmittanceRT, "SRGB Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
+            CommonUtils.CreateLUT(ref _srgbtransmittanceRT, "Srgb Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
             CommonUtils.CreateLUT(ref _multipleScatteringLut, "Multiple Scattering", multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
             CommonUtils.CreateLUT(ref _srgbSkyViewLut, "Srgb Sky LUT", skyViewLutSize.x, skyViewLutSize.y, 1, RenderTextureFormat.ARGBHalf, TextureWrapMode.Mirror, TextureWrapMode.Clamp);
 
@@ -373,7 +373,7 @@ namespace Abus.Runtime
         private void RenderTransmittanceLut()
         {
             TransmittanceCS.SetTexture(0, "OutTransmittance", _transmittanceRT);
-            TransmittanceCS.SetTexture(0, "OutSRGBTransmittance", _SRGBtransmittanceRT);
+            TransmittanceCS.SetTexture(0, "OutSRGBTransmittance", _srgbtransmittanceRT);
             TransmittanceCS.Dispatch(0, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
         }
 
