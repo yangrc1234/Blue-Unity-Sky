@@ -12,6 +12,12 @@ public class ReferenceImageCaptureEditor : Editor
         DrawDefaultInspector();
         
         ReferenceImageCapture capture = (ReferenceImageCapture)target;
+        
+        if (GUILayout.Button("Prepare Capture"))
+        {
+            capture.PrepareCapture();
+        }
+        
         if (GUILayout.Button("Capture"))
         {
             capture.Execute();

@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 namespace Abus.Runtime
 {
@@ -31,14 +32,15 @@ namespace Abus.Runtime
         // Place at same level with Assets/Library etc.
         public string AbsoluteFolderPath =>  System.IO.Directory.GetCurrentDirectory() + "/" + folder + "/";
 
-        public bool outputAorB = false;
+        // B Group is testing image, A is reference image.
+        public bool CaptureToTestGroup = false;
 
         [ContextMenu("Difference Pass")]
         public void RunDifferencePass()
         {
             // Read images in A and B, for each pair of same name images, outputs a image of difference.
-            string dirA = AbsoluteFolderPath + "/A/";
-            string dirB = AbsoluteFolderPath + "/B/";
+            string dirA = AbsoluteFolderPath + "/Reference/";
+            string dirB = AbsoluteFolderPath + "/Test/";
             string dirDiff = AbsoluteFolderPath + "/Diff/";
             Directory.CreateDirectory(dirDiff);
         
@@ -86,9 +88,30 @@ namespace Abus.Runtime
             }
         }
 
+        public void PrepareCapture()
+        {
+            // Find abus core.  
+            AbusCore abusCore = FindObjectOfType<AbusCore>();
+            if (abusCore == null)
+                return;
+
+            foreach (var imageSetting in ImageSettings)
+            {
+                abusCore.boundLight.transform.rotation = imageSetting.SunPose.rotation;
+                break;
+            }
+        }
+
         [ContextMenu("Execute")]
         public void Execute()
         {
+            if (!CaptureToTestGroup)
+            {
+                // Show a confirm dialogue.  
+                if (!UnityEditor.EditorUtility.DisplayDialog("Warning", "Create new reference images?", "Yes", "No"))
+                    return;
+            }
+            
             // Create or get camera gameobject.
             GameObject camObj = GameObject.Find("ScreenshotCamera");
             Camera cam = camObj ? camObj.GetComponent<Camera>() : new GameObject("ScreenshotCamera").AddComponent<Camera>();
@@ -115,11 +138,13 @@ namespace Abus.Runtime
                     TakeScreenshot(cam, imageIndex++);
                 }
             }
+
+            PrepareCapture();   // Reset to initial state.
         }
 
-        public void TakeScreenshot(Camera cam, int imageIndex) {
-
-            string dir = AbsoluteFolderPath + (outputAorB ? "A/" : "B/");
+        public void TakeScreenshot(Camera cam, int imageIndex)
+        {
+            string dir = AbsoluteFolderPath + (CaptureToTestGroup ? "Test/" : "Reference/");
             string filename = imageIndex.ToString() + ".png";
             string path = dir + filename;
 
