@@ -16,13 +16,9 @@ namespace Abus.Runtime
     {
         public Transform[] cameraPoses;
 
-        [System.Serializable]
-        public class CaptureSettings
-        {
-            public Transform SunPose;
-        }
+        public Transform[] SunPoses;
 
-        public CaptureSettings[] ImageSettings;
+        public AbusAerosolTypeProfile[] AerosolTypes;
 
         [SerializeField] int width = 1024;
         [SerializeField] int height = 512;
@@ -91,12 +87,20 @@ namespace Abus.Runtime
         {
             // Find abus core.  
             AbusCore abusCore = FindObjectOfType<AbusCore>();
+            var aerosolMixer = FindObjectOfType<AbusAerosolMixer>();
             if (abusCore == null)
                 return;
 
-            foreach (var imageSetting in ImageSettings)
+            foreach (var sunPose in SunPoses)
             {
-                abusCore.boundLight.transform.rotation = imageSetting.SunPose.rotation;
+                abusCore.boundLight.transform.rotation = sunPose.rotation;
+                break;
+            }
+
+            foreach (var aerosolType in AerosolTypes)
+            {
+                aerosolMixer.MainProfile = aerosolType;
+                aerosolMixer.Apply();
                 break;
             }
         }
@@ -119,21 +123,27 @@ namespace Abus.Runtime
         
             // Find abus core.  
             AbusCore abusCore = FindObjectOfType<AbusCore>();
+            var aerosolMixer = FindObjectOfType<AbusAerosolMixer>();
             if (abusCore == null)
                 return;
 
-            foreach (var imageSetting in ImageSettings)
+            foreach (var sunPose in SunPoses)
             {
-                abusCore.boundLight.transform.rotation = imageSetting.SunPose.rotation;
-
-                abusCore.GetComponent<AbusLutUpdater>().UpdateLuts(true);
-                abusCore.GetComponent<AbusSceneLighting>().UpdateLighting();
-            
-                foreach (var pose in cameraPoses)
+                foreach (var aerosolType in AerosolTypes)
                 {
-                    cam.transform.position = pose.position;
-                    cam.transform.rotation = pose.rotation;
-                    TakeScreenshot(cam, imageIndex++);
+                    abusCore.boundLight.transform.rotation = sunPose.rotation;
+                    aerosolMixer.MainProfile = aerosolType;
+                    aerosolMixer.Apply();
+
+                    abusCore.GetComponent<AbusLutUpdater>().UpdateLuts(true);
+                    abusCore.GetComponent<AbusSceneLighting>().UpdateLighting();
+
+                    foreach (var pose in cameraPoses)
+                    {
+                        cam.transform.position = pose.position;
+                        cam.transform.rotation = pose.rotation;
+                        TakeScreenshot(cam, imageIndex++);
+                    }
                 }
             }
 
