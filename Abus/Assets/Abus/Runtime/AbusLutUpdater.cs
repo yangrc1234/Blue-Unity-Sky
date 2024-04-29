@@ -90,7 +90,6 @@ namespace Abus.Runtime
 
         private RenderTexture _transmittanceRT;
         private RenderTexture _SRGBtransmittanceRT;
-        private RenderTexture _SRGBtransmittanceWeightRT;
         private RenderTexture _multipleScatteringLut;
         private RenderTexture _srgbSkyViewLut;
         public RenderTexture SrgbSkyViewLut => _srgbSkyViewLut;
@@ -107,7 +106,6 @@ namespace Abus.Runtime
             // Clear sky view LUT.
             ClearRT(_srgbSkyViewLut);
             ClearRT(_SRGBtransmittanceRT);
-            ClearRT(_SRGBtransmittanceWeightRT);
 
             if (bUpdateReadbackBuffer)
                 ClearReadbackBuffer();
@@ -216,7 +214,6 @@ namespace Abus.Runtime
 
         private void RenderSRGBTransmittanceLUT()
         {
-            TransmittanceCS.SetTexture(1, "OutSRGBTransmittanceWeight", _SRGBtransmittanceWeightRT);
             TransmittanceCS.SetTexture(1, "WavelengthTransmittance", _transmittanceRT);
             TransmittanceCS.Dispatch(1, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
         }
@@ -225,7 +222,6 @@ namespace Abus.Runtime
         private void ResolveSRGBTransmittanceLUT()
         {
             TransmittanceCS.SetTexture(2, "OutSRGBTransmittance", _SRGBtransmittanceRT);
-            TransmittanceCS.SetTexture(2, "SRGBTransmittanceWeight", _SRGBtransmittanceWeightRT);
             TransmittanceCS.Dispatch(2, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
         }
 
@@ -281,7 +277,6 @@ namespace Abus.Runtime
 
             CommonUtils.CreateLUT(ref _transmittanceRT, "Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
             CommonUtils.CreateLUT(ref _SRGBtransmittanceRT, "SRGB Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
-            CommonUtils.CreateLUT(ref _SRGBtransmittanceWeightRT, "SRGB Transmittance Weight", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
             CommonUtils.CreateLUT(ref _multipleScatteringLut, "Multiple Scattering", multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
             CommonUtils.CreateLUT(ref _srgbSkyViewLut, "Srgb Sky LUT", skyViewLutSize.x, skyViewLutSize.y, 1, RenderTextureFormat.ARGBHalf, TextureWrapMode.Mirror, TextureWrapMode.Clamp);
 
@@ -464,11 +459,9 @@ namespace Abus.Runtime
 
                     NormalizedWavelengthRGBWeight.SetColumn(i - FirstSpectrumIndex, values.NormalizedRGBWeight);
                     WavelengthRGBWeight.SetColumn(i - FirstSpectrumIndex, values.RGBWeight);
-                    
                 }
                 Shader.SetGlobalMatrix("NormalizedWavelengthRGBWeight", NormalizedWavelengthRGBWeight);
                 Shader.SetGlobalMatrix("WavelengthToSRGB", WavelengthRGBWeight);
-                
             }
 
             Shader.SetGlobalInteger("CurrentIteratingFirstWavelengthIndex", FirstSpectrumIndex);
