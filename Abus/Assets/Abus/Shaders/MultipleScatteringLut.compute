@@ -77,15 +77,15 @@ void MainCS(uint3 id : SV_DispatchThreadID)
     
     float4 Illuminance = 0.0f, MultiScat = 0.0f;
 
-    const int NUM_THETA = 8;
+    const int NUM_THETA = 1;    // Since we assume uniform phase for multiple scattering, theta doesn't matter.
     const int NUM_PHI = 8;
     
     for (int iPhi = 0; iPhi < NUM_PHI; iPhi++)    // Y(vertical) angle.
     {
         for (int iTheta = 0; iTheta < NUM_THETA; iTheta++) // XZ plane angle.
         {
-            const float dPhi = PI / NUM_THETA;
-            const float dTheta = (2.0f * PI) / NUM_PHI;
+            const float dPhi = PI / NUM_PHI;
+            const float dTheta = (2.0f * PI) / NUM_THETA;
             
             const float phi = (iPhi + 0.5f) * dPhi;
             const float theta = (iTheta + 0.5f) * dTheta;
