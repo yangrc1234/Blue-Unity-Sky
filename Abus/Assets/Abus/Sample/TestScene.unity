@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 0
-  m_FogColor: {r: 0.013899849, g: 0.018159222, b: 0.027561063, a: 1}
+  m_FogColor: {r: 0.013030579, g: 0.017161284, b: 0.026235286, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.01
   m_LinearFogStart: 0
@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 0.031577904
   m_AmbientMode: 4
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 1345952875}
+  m_SkyboxMaterial: {fileID: 1231400855}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.013900984, g: 0.018160047, b: 0.027561625, a: 1}
+  m_IndirectSpecularColor: {r: 0.013030579, g: 0.017161284, b: 0.026235286, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -289,8 +289,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: -0.017289307, b: -0.017873028, a: 1}
-  m_Intensity: 0.00006684397
+  m_Color: {r: 1, g: 0.089523904, b: -0.028813018, a: 1}
+  m_Intensity: 0.013117619
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -348,13 +348,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 180836268}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.079325, y: 0.7218034, z: -0.076608695, w: -0.6832558}
+  m_LocalRotation: {x: 0.079094, y: 0.72185266, z: -0.0748831, w: -0.68342185}
   m_LocalPosition: {x: 1.75, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0.126, y: 266.871, z: 12.662}
+  m_LocalEulerAnglesHint: {x: 0, y: 266.867, z: 12.506}
 --- !u!114 &180836271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -378,6 +378,37 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &376788517
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 376788518}
+  m_Layer: 0
+  m_Name: GameObject (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &376788518
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 376788517}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.18846086, y: 0.6955614, z: -0.345424, w: -0.6011315}
+  m_LocalPosition: {x: 1.75, y: 3, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1516178363}
+  m_LocalEulerAnglesHint: {x: 45, y: 266.867, z: 12.506}
 --- !u!1 &716280092
 GameObject:
   m_ObjectHideFlags: 0
@@ -412,11 +443,12 @@ MonoBehaviour:
   ImageSettings:
   - SunPose: {fileID: 51426271}
   - SunPose: {fileID: 1293272658}
+  - SunPose: {fileID: 376788518}
   width: 1024
   height: 512
   folder: Screenshots
   diffMultiplier: 10
-  outputAorB: 1
+  outputAorB: 0
 --- !u!4 &716280094
 Transform:
   m_ObjectHideFlags: 0
@@ -572,6 +604,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!21 &1231400855
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Unlit/AbusSampleSkybox
+  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats: []
+    m_Colors: []
+  m_BuildTextureStacks: []
 --- !u!1 &1292811484
 GameObject:
   m_ObjectHideFlags: 0
@@ -708,37 +771,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1516178363}
   m_LocalEulerAnglesHint: {x: 2.979, y: 266.867, z: 12.506}
---- !u!21 &1345952875
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Unlit/AbusSampleSkybox
-  m_Shader: {fileID: 4800000, guid: dff4a0f78c11fd94aadf89f9f9dc5eb3, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats: []
-    m_Colors: []
-  m_BuildTextureStacks: []
 --- !u!1 &1432650565
 GameObject:
   m_ObjectHideFlags: 0
@@ -898,6 +930,7 @@ Transform:
   m_Children:
   - {fileID: 1293272658}
   - {fileID: 51426271}
+  - {fileID: 376788518}
   m_Father: {fileID: 716280094}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1521290683
@@ -1319,6 +1352,11 @@ PrefabInstance:
       propertyPath: boundLight
       value: 
       objectReference: {fileID: 180836269}
+    - target: {fileID: 2923311620115958321, guid: 865d3fd95c4694140a4589adf5757fb1,
+        type: 3}
+      propertyPath: sunAngularDiameter
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 2923311620115958321, guid: 865d3fd95c4694140a4589adf5757fb1,
         type: 3}
       propertyPath: solarIrradianceScale

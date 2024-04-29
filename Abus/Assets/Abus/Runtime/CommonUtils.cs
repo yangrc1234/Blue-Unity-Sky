@@ -48,10 +48,9 @@ namespace Rcying.Atmosphere
             return new Vector3(xFit_1931(waveLength), yFit_1931(waveLength), zFit_1931(waveLength));
         }
 
-        public static Color ConvertXyzToSRGB(Vector3 XYZ)
+        public static Vector3 ConvertXyzToSrgb(Vector3 XYZ)
         {
-            var transformed = XyzToSRGB.transpose * XYZ;
-            return new Color(transformed.x, transformed.y, transformed.z, 1.0f);
+            return XyzToSRGB.transpose * XYZ;
         }
 
         public static Vector3Int GetDispatchGroup(Vector3Int size, Vector3Int groupSize)

@@ -180,7 +180,7 @@ namespace Abus.Runtime
         /// Note this is the color on outer atmosphere,
         /// Shouldn't be used for scene lighting!
         /// </summary>
-        public Color SRGBSolarIrradiance => cachedSRGBSolarIrradiance * solarIrradianceScale;
+        public Vector3 SRGBSolarIrradiance => cachedSRGBSolarIrradiance * solarIrradianceScale;
 
         struct SolarWavelengthEntry
         {
@@ -189,7 +189,7 @@ namespace Abus.Runtime
             public float width;
         }
         
-        private Color cachedSRGBSolarIrradiance;
+        private Vector3 cachedSRGBSolarIrradiance;
 
         private void ReadAndProcessSolarIrradianceTable()
         {
@@ -207,7 +207,7 @@ namespace Abus.Runtime
                 XYZ += CommonUtils.MapWaveLengthToXYZ(waveLength) * irradiance * dw;
             }
 
-            cachedSRGBSolarIrradiance = CommonUtils.ConvertXyzToSRGB(XYZ);
+            cachedSRGBSolarIrradiance = CommonUtils.ConvertXyzToSrgb(XYZ);
         }
         
         #endregion

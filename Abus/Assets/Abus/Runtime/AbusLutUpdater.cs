@@ -118,10 +118,7 @@ namespace Abus.Runtime
                 RenderTransmittanceLut();
                 RenderMultipleScatteringLut();
                 RenderSkyViewLut();
-                RenderSRGBTransmittanceLUT();
             }
-
-            ResolveSRGBTransmittanceLUT();
 
             if (bUpdateReadbackBuffer)
             {
@@ -219,7 +216,6 @@ namespace Abus.Runtime
 
         private void RenderSRGBTransmittanceLUT()
         {
-            TransmittanceCS.SetTexture(1, "OutSRGBTransmittance", _SRGBtransmittanceRT);
             TransmittanceCS.SetTexture(1, "OutSRGBTransmittanceWeight", _SRGBtransmittanceWeightRT);
             TransmittanceCS.SetTexture(1, "WavelengthTransmittance", _transmittanceRT);
             TransmittanceCS.Dispatch(1, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
@@ -261,7 +257,7 @@ namespace Abus.Runtime
                 return false;
 
             // Verify settings.
-            if (wavelengthCachedValuesList == null || wavelengthCachedValuesList.Count != NumWavelengths)
+            if (wavelengthCachedValuesList == null || wavelengthCachedValuesList.Length != NumWavelengths)
             {
                 DirtyFlags |= EDirtyFlags.Wavelength;
             }
@@ -382,6 +378,7 @@ namespace Abus.Runtime
         private void RenderTransmittanceLut()
         {
             TransmittanceCS.SetTexture(0, "OutTransmittance", _transmittanceRT);
+            TransmittanceCS.SetTexture(0, "OutSRGBTransmittance", _SRGBtransmittanceRT);
             TransmittanceCS.Dispatch(0, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
         }
 
@@ -393,31 +390,48 @@ namespace Abus.Runtime
             public float rayleighPhaseGamma;
             public float rayleighSeaLevelScatteringCoefficient;
             public float ozoneAbsorptionCrossSection;
+            public Vector3 RGBWeight;
         }
 
-        private List<IteratingWavelengthCachedValues> wavelengthCachedValuesList = new();
+        private IteratingWavelengthCachedValues[] wavelengthCachedValuesList;
 
         /// <summary>
         /// Apply wave length settings to updating.
         /// </summary>
         private void ApplyWavelengthSettings()
         {
-            wavelengthCachedValuesList.Clear();
-            
+            if (wavelengthCachedValuesList == null || wavelengthCachedValuesList.Length != numWavelengths)
+                wavelengthCachedValuesList = new IteratingWavelengthCachedValues[numWavelengths];
+
+            Vector3 TotalRGBWeight = Vector3.zero;
             for (int i = 0; i < NumWavelengths; i++)
             {
                 IteratingWavelengthCachedValues value;
-                value.wavelength = GetIterateWavelengthNM(i);
+                var wavelength = GetIterateWavelengthNM(i);
+                wavelengthCachedValuesList[i].wavelength = wavelength;
                 var dw = GetWavelengthDW();
-                var depolarizationFactor = core.CalculateRayleighDepolarizationFactor(value.wavelength);
-                var airRefractiveIndex = RayleighUtils.GetStandardAirRefractiveIndex(value.wavelength);
-                var rayleighSeaLevelScatteringCoefficient = RayleighUtils.CalculateRayleighScatteringCoefficientM(value.wavelength, depolarizationFactor, airRefractiveIndex);
-                value.groundAlbedo = core.CalculateGroundAlbedoOfWavelength(value.wavelength, dw); 
-                value.rayleighSeaLevelScatteringCoefficient = (float)(rayleighSeaLevelScatteringCoefficient * 1e3);//Convert to /KM
-                value.rayleighPhaseGamma = depolarizationFactor / (2.0f - depolarizationFactor);
-                value.solarIrradiance = core.CalculateAverageIrradianceOfWavelength(value.wavelength, dw);
-                value.ozoneAbsorptionCrossSection = core.CalculateOZoneAbsorptionCrossSectionM2(value.wavelength, dw);
-                wavelengthCachedValuesList.Add(value);
+                var depolarizationFactor = core.CalculateRayleighDepolarizationFactor(wavelength);
+                var airRefractiveIndex = RayleighUtils.GetStandardAirRefractiveIndex(wavelength);
+                var rayleighSeaLevelScatteringCoefficient = RayleighUtils.CalculateRayleighScatteringCoefficientM(wavelength, depolarizationFactor, airRefractiveIndex);
+                wavelengthCachedValuesList[i].groundAlbedo = core.CalculateGroundAlbedoOfWavelength(wavelength, dw); 
+                wavelengthCachedValuesList[i].rayleighSeaLevelScatteringCoefficient = (float)(rayleighSeaLevelScatteringCoefficient * 1e3);//Convert to /KM
+                wavelengthCachedValuesList[i].rayleighPhaseGamma = depolarizationFactor / (2.0f - depolarizationFactor);
+                wavelengthCachedValuesList[i].solarIrradiance = core.CalculateAverageIrradianceOfWavelength(wavelength, dw);
+                wavelengthCachedValuesList[i].ozoneAbsorptionCrossSection = core.CalculateOZoneAbsorptionCrossSectionM2(wavelength, dw);
+                wavelengthCachedValuesList[i].RGBWeight = CommonUtils.ConvertXyzToSrgb(CommonUtils.MapWaveLengthToXYZ(GetIterateWavelengthNM(i)));
+            }
+            
+            // Normalize rgb weight. 
+            for (int i = 0; i < NumWavelengths; i++)
+            {
+                TotalRGBWeight += wavelengthCachedValuesList[i].RGBWeight;
+            }
+            
+            for (int i = 0; i < NumWavelengths; i++)
+            {
+                wavelengthCachedValuesList[i].RGBWeight.x /= TotalRGBWeight.x;
+                wavelengthCachedValuesList[i].RGBWeight.y /= TotalRGBWeight.y;
+                wavelengthCachedValuesList[i].RGBWeight.z /= TotalRGBWeight.z;
             }
         }
 
@@ -430,17 +444,27 @@ namespace Abus.Runtime
             Vector4 RayleighSeaLevelScatteringCoefficients = Vector4.zero;
             Vector4 RayleighPhaseFunctionGamma = Vector4.zero;
             Vector4 OZoneAbsorptionCrossSection = Vector4.zero;
-            for (int i = FirstSpectrumIndex; i < FirstSpectrumIndex + 4 && i < NumWavelengths; i++)
+
             {
-                var values = wavelengthCachedValuesList[i];
-                CurrentIteratingWavelengthUM[i - FirstSpectrumIndex] = values.wavelength * 1e-3f;
-                CurrentIteratingWavelengthUMInv[i - FirstSpectrumIndex] = 1.0f / CurrentIteratingWavelengthUM[i - FirstSpectrumIndex];
-                CurrentIteratingSunIrradiance[i - FirstSpectrumIndex] = values.solarIrradiance;
-                RayleighSeaLevelScatteringCoefficients[i - FirstSpectrumIndex] = values.rayleighSeaLevelScatteringCoefficient;
-                RayleighPhaseFunctionGamma[i - FirstSpectrumIndex] = values.rayleighPhaseGamma;
-                GroundSpectrumAlbedo[i - FirstSpectrumIndex] = values.groundAlbedo;
-                OZoneAbsorptionCrossSection[i - FirstSpectrumIndex] = values.ozoneAbsorptionCrossSection;
+                Matrix4x4 wavelengthRGBWeight = Matrix4x4.zero;
+                for (int i = FirstSpectrumIndex; i < FirstSpectrumIndex + 4 && i < NumWavelengths; i++)
+                {
+                    var values = wavelengthCachedValuesList[i];
+                    CurrentIteratingWavelengthUM[i - FirstSpectrumIndex] = values.wavelength * 1e-3f;
+                    CurrentIteratingWavelengthUMInv[i - FirstSpectrumIndex] =
+                        1.0f / CurrentIteratingWavelengthUM[i - FirstSpectrumIndex];
+                    CurrentIteratingSunIrradiance[i - FirstSpectrumIndex] = values.solarIrradiance;
+                    RayleighSeaLevelScatteringCoefficients[i - FirstSpectrumIndex] =
+                        values.rayleighSeaLevelScatteringCoefficient;
+                    RayleighPhaseFunctionGamma[i - FirstSpectrumIndex] = values.rayleighPhaseGamma;
+                    GroundSpectrumAlbedo[i - FirstSpectrumIndex] = values.groundAlbedo;
+                    OZoneAbsorptionCrossSection[i - FirstSpectrumIndex] = values.ozoneAbsorptionCrossSection;
+
+                    wavelengthRGBWeight.SetColumn(i - FirstSpectrumIndex, values.RGBWeight);
+                }
+                Shader.SetGlobalMatrix("WavelengthRGBWeight", wavelengthRGBWeight);
             }
+
             Shader.SetGlobalInteger("CurrentIteratingFirstWavelengthIndex", FirstSpectrumIndex);
             Shader.SetGlobalVector("CurrentIteratingWavelengthUM", CurrentIteratingWavelengthUM);
             Shader.SetGlobalVector("CurrentIteratingWavelengthUMInv", CurrentIteratingWavelengthUMInv);
@@ -452,7 +476,9 @@ namespace Abus.Runtime
             Shader.SetGlobalVector("RayleighSeaLevelSpectrumScatteringCoefficient", RayleighSeaLevelScatteringCoefficients);
             Shader.SetGlobalVector("RayleighSpectrumPhaseFunctionGamma", RayleighPhaseFunctionGamma);
             
-            Shader.SetGlobalVector("OZoneAbsorptionCrossSection", OZoneAbsorptionCrossSection);            
+            Shader.SetGlobalVector("OZoneAbsorptionCrossSection", OZoneAbsorptionCrossSection);          
+            
+            Shader.SetGlobalVector("OZoneAbsorptionCrossSection", OZoneAbsorptionCrossSection);
         }
 
         protected virtual Vector3 GetLightDirection()
