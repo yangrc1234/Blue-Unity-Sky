@@ -66,7 +66,7 @@ float4 Integrate(float OriginHeight, float3 ViewDir)
         // Take more samples when crossing the boundary layer.
         bool bCrossingPlanetBoundaryLayer = (abs((length(SamplePos) - GroundHeight) - PlanetBoundaryLayerAltitude) < PLANET_BOUNDARY_LAYER_FADE_HEIGHT * 3.0f) || (length(SampleStart) - GroundHeight > PlanetBoundaryLayerAltitude) != (length(SampleEnd) - GroundHeight > PlanetBoundaryLayerAltitude); 
 
-        if (bCrossingPlanetBoundaryLayer)
+        if (bCrossingPlanetBoundaryLayer && HIGHER_SAMPLE_AT_BOUNDARY_LAYER)
         {
             const int SubStepNum = 8;
             for (int iSubstep = 0; iSubstep < SubStepNum; iSubstep++)

@@ -35,7 +35,6 @@ namespace Abus.Runtime
         // B Group is testing image, A is reference image.
         public bool CaptureToTestGroup = false;
 
-        [ContextMenu("Difference Pass")]
         public void RunDifferencePass()
         {
             // Read images in A and B, for each pair of same name images, outputs a image of difference.
@@ -102,7 +101,6 @@ namespace Abus.Runtime
             }
         }
 
-        [ContextMenu("Execute")]
         public void Execute()
         {
             if (!CaptureToTestGroup)
