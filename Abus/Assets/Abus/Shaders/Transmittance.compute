@@ -41,5 +41,5 @@ void MainCS(uint3 id : SV_DispatchThreadID)
     GetRMuFromTransmittanceTextureUv((0.5f + id.xy) / TransmittanceTextureSizeInvSize.xy, r, mu);
     const float4 Transmittance = TransmittanceRaymarch(r, mu);
     OutTransmittance[id.xy] = Transmittance;
-    OutSRGBTransmittance[id.xy] += float4(mul((float3x4)WavelengthRGBWeight, Transmittance), 0.0f);
+    OutSRGBTransmittance[id.xy] += float4(mul((float3x4)NormalizedWavelengthRGBWeight, Transmittance), 0.0f);
 }

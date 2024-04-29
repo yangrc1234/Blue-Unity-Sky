@@ -92,5 +92,6 @@ RWTexture2D<float4> OutSrgbSkyColor;
 void MainCS(uint3 id : SV_DispatchThreadID)
 {
     float3 ViewDir = GetSkyViewTextureUvToViewDir(CaptureHeight, (0.5f + id.xy) * SkyViewTextureSizeAndInvSize.zw);
-    OutSrgbSkyColor[id.xy] += float4(ColorConvertToSRGB(dWaveLength * CurrentIteratingSunIrradiance * Integrate(CaptureHeight, ViewDir)), 0.0f);
+    const float4 SpectrumResult = dWaveLength * CurrentIteratingSunIrradiance * Integrate(CaptureHeight, ViewDir);
+    OutSrgbSkyColor[id.xy] += float4(mul((float3x4)WavelengthToSRGB, SpectrumResult), 0.0f);
 }

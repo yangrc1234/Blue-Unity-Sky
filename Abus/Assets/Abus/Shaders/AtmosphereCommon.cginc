@@ -167,7 +167,8 @@ float4 CurrentIteratingWavelengthUM;
 float4 CurrentIteratingWavelengthUMInv;
 float4 CurrentIteratingSunIrradiance;
 float4 CurrentIteratingSunRadiance;
-float4x4 WavelengthRGBWeight;  // Store RGB weight for each wavelength.
+float4x4 NormalizedWavelengthRGBWeight;  // Store RGB weight for each wavelength.
+float4x4 WavelengthToSRGB;  // Translate result of current 4 wavelenght to SRGB.
 float dWaveLength;
 
 float3 WavelengthToXYZ(float4 SpectrumResult)

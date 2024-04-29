@@ -390,6 +390,7 @@ namespace Abus.Runtime
             public float rayleighPhaseGamma;
             public float rayleighSeaLevelScatteringCoefficient;
             public float ozoneAbsorptionCrossSection;
+            public Vector3 NormalizedRGBWeight;
             public Vector3 RGBWeight;
         }
 
@@ -429,9 +430,9 @@ namespace Abus.Runtime
             
             for (int i = 0; i < NumWavelengths; i++)
             {
-                wavelengthCachedValuesList[i].RGBWeight.x /= TotalRGBWeight.x;
-                wavelengthCachedValuesList[i].RGBWeight.y /= TotalRGBWeight.y;
-                wavelengthCachedValuesList[i].RGBWeight.z /= TotalRGBWeight.z;
+                wavelengthCachedValuesList[i].NormalizedRGBWeight.x = wavelengthCachedValuesList[i].RGBWeight.x / TotalRGBWeight.x;
+                wavelengthCachedValuesList[i].NormalizedRGBWeight.y = wavelengthCachedValuesList[i].RGBWeight.y / TotalRGBWeight.y;
+                wavelengthCachedValuesList[i].NormalizedRGBWeight.z = wavelengthCachedValuesList[i].RGBWeight.z / TotalRGBWeight.z;
             }
         }
 
@@ -446,7 +447,8 @@ namespace Abus.Runtime
             Vector4 OZoneAbsorptionCrossSection = Vector4.zero;
 
             {
-                Matrix4x4 wavelengthRGBWeight = Matrix4x4.zero;
+                Matrix4x4 NormalizedWavelengthRGBWeight = Matrix4x4.zero;
+                Matrix4x4 WavelengthRGBWeight = Matrix4x4.zero;
                 for (int i = FirstSpectrumIndex; i < FirstSpectrumIndex + 4 && i < NumWavelengths; i++)
                 {
                     var values = wavelengthCachedValuesList[i];
@@ -460,9 +462,13 @@ namespace Abus.Runtime
                     GroundSpectrumAlbedo[i - FirstSpectrumIndex] = values.groundAlbedo;
                     OZoneAbsorptionCrossSection[i - FirstSpectrumIndex] = values.ozoneAbsorptionCrossSection;
 
-                    wavelengthRGBWeight.SetColumn(i - FirstSpectrumIndex, values.RGBWeight);
+                    NormalizedWavelengthRGBWeight.SetColumn(i - FirstSpectrumIndex, values.NormalizedRGBWeight);
+                    WavelengthRGBWeight.SetColumn(i - FirstSpectrumIndex, values.RGBWeight);
+                    
                 }
-                Shader.SetGlobalMatrix("WavelengthRGBWeight", wavelengthRGBWeight);
+                Shader.SetGlobalMatrix("NormalizedWavelengthRGBWeight", NormalizedWavelengthRGBWeight);
+                Shader.SetGlobalMatrix("WavelengthToSRGB", WavelengthRGBWeight);
+                
             }
 
             Shader.SetGlobalInteger("CurrentIteratingFirstWavelengthIndex", FirstSpectrumIndex);
