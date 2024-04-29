@@ -212,19 +212,6 @@ namespace Abus.Runtime
             SceneLightingCS.Dispatch(0, new Vector3Int(1, 1, 1));
         }
 
-        private void RenderSRGBTransmittanceLUT()
-        {
-            TransmittanceCS.SetTexture(1, "WavelengthTransmittance", _transmittanceRT);
-            TransmittanceCS.Dispatch(1, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
-        }
-
-
-        private void ResolveSRGBTransmittanceLUT()
-        {
-            TransmittanceCS.SetTexture(2, "OutSRGBTransmittance", _srgbtransmittanceRT);
-            TransmittanceCS.Dispatch(2, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
-        }
-
         [Flags]
         public enum EDirtyFlags
         {
@@ -275,9 +262,10 @@ namespace Abus.Runtime
             
             DirtyFlags = 0;
 
-            CommonUtils.CreateLUT(ref _transmittanceRT, "Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
-            CommonUtils.CreateLUT(ref _srgbtransmittanceRT, "Srgb Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
-            CommonUtils.CreateLUT(ref _multipleScatteringLut, "Multiple Scattering", multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
+            // After testing, half/full-precision produces nearly no difference.  
+            CommonUtils.CreateLUT(ref _transmittanceRT, "Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
+            CommonUtils.CreateLUT(ref _srgbtransmittanceRT, "Srgb Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
+            CommonUtils.CreateLUT(ref _multipleScatteringLut, "Multiple Scattering", multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
             CommonUtils.CreateLUT(ref _srgbSkyViewLut, "Srgb Sky LUT", skyViewLutSize.x, skyViewLutSize.y, 1, RenderTextureFormat.ARGBHalf, TextureWrapMode.Mirror, TextureWrapMode.Clamp);
 
             return true;
