@@ -1,9 +1,8 @@
-﻿#pragma kernel MainCS
-
-// This shader is for calculating realtime reflection info from sky texture.
+﻿// This shader is for calculating realtime reflection info from sky texture.
 
 #define TRANSMITTANCE_READABLE 1
-#define SKYVIEW_READABLE 1
+#define TRANSMITTANCE_SRGB_READABLE 1
+#define SKYVIEW_SRGB_READABLE 1
 
 #include "LutCommon.cginc"
 
@@ -205,6 +204,7 @@ void StoreDirectionalLight(float3 Color, RWStructuredBuffer<float4> OutBuffer)
 // Same rays as group size are dispatched, then radiance is accumulated.
 // Sun disc is processed as well.
 // Only dispatch 1 group, and use group memory barrier to reduce.
+#pragma kernel MainCS
 [numthreads(THREAD_NUM, 1, 1)]
 void MainCS(uint3 id : SV_DispatchThreadID)
 {
@@ -233,10 +233,10 @@ void MainCS(uint3 id : SV_DispatchThreadID)
 
         const float PDF = SkySample.w;
 
-        float4 SampledSkyRadiance = GetSkyView(CaptureHeight, SkySample.xyz) / PDF;
+        float3 SampledSkyRadiance = GetSrgbSkyView(CaptureHeight, SkySample.xyz) / PDF;
 
         // Convert to SRGB first.
-        const float3 RGBColor = ColorConvertToSRGB(SampledSkyRadiance) * dWaveLength / (2.0f * PI);
+        const float3 RGBColor = SampledSkyRadiance / (2.0f * PI);
 
         // Calculate SH for R,G,B
         for (int iBand = 0; iBand < 3; iBand++)
@@ -268,19 +268,18 @@ void MainCS(uint3 id : SV_DispatchThreadID)
         float3 SampleWorldDir = TangentToWorld(ConeSample.xyz, AtmosphereLightDirection);
 
         const float mu = dot(SampleWorldDir, float3(0.0f, 1.0f, 0.0f));
-        float4 SunColor = CurrentIteratingSunRadiance * GetTransmittance(CaptureHeight, mu) * (RayIntersectsGround(CaptureHeight, mu) ? 0.0f : 1.0f);
+        float3 SunColor = SunCenterSrgbRadiance * GetSRGBTransmittance(CaptureHeight, mu) * (RayIntersectsGround(CaptureHeight, mu) ? 0.0f : 1.0f);
 
-        float4 SumResult = SumColor(id.x, max(0.0f, SunColor) / PDF) / THREAD_NUM;
+        float3 SumResult = SumColor(id.x, float4(SunColor, 0.0f) / PDF).rgb / THREAD_NUM;
 
         if (id.x == 0)
         {
-            StoreDirectionalLight(dWaveLength * ColorConvertToSRGB(SumResult), OutReadbackBuffer);
+            StoreDirectionalLight(SumResult, OutReadbackBuffer);
         }
     }
 }
 
 #pragma kernel ClearCS
-
 [numthreads(32, 1, 1)]
 void ClearCS(uint3 id : SV_DispatchThreadID)
 {

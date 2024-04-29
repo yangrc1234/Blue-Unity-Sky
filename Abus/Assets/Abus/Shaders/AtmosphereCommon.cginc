@@ -92,6 +92,7 @@ float3 AtmosphereLightDirection;
 float CosSunDiscHalfAngle;
 float SunDiscHalfAngle;
 float3 SunCenterSrgbRadiance;
+float3 SunSrgbIrradiance;
 float CaptureHeight;
 
 float ClampRadius(float r) {

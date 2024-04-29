@@ -32,8 +32,9 @@ namespace Abus.Runtime
         [Range(0.0f, 1.0f)]
         public float geometryCrossSection = 0.01f;
 
-        [Header("Vertical Profile")] [Range(0.01f, 8.0f)]
+        [Header("Vertical Profile")]
         public EAerosolHeightType heightType;
+        [Range(0.1f, 100.0f)]
         public float scaleHeightKM = 8.0f;  // Value above PBL layer.
     }
     

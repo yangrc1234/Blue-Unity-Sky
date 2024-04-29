@@ -92,7 +92,7 @@ Texture2D<float4> SRGBTransmittanceTexture;
 SamplerState sampler_SRGBTransmittanceTexture;
 float3 GetSRGBTransmittance(float r, float cosViewZenith)
 {
-	return SRGBTransmittanceTexture.SampleLevel(sampler_SRGBTransmittanceTexture, GetTransmittanceTextureUvFromRMu(r, cosViewZenith), 0.0f);
+	return SRGBTransmittanceTexture.SampleLevel(sampler_SRGBTransmittanceTexture, GetTransmittanceTextureUvFromRMu(r, cosViewZenith), 0.0f).rgb;
 }
 
 #endif
@@ -254,19 +254,8 @@ float2 GetSkyViewTextureViewDirToUV(float R, float3 ViewDir)
 #if SKYVIEW_SRGB_READABLE
 Texture2D<float4> SrgbSkyViewTexture;
 SamplerState sampler_SrgbSkyViewTexture;
-float4 GetSrgbSkyView(float R, float3 viewDir)
+float3 GetSrgbSkyView(float R, float3 viewDir)
 {
-	return SrgbSkyViewTexture.SampleLevel(sampler_SrgbSkyViewTexture, GetSkyViewTextureViewDirToUV(R, viewDir), 0.0f);
+	return SrgbSkyViewTexture.SampleLevel(sampler_SrgbSkyViewTexture, GetSkyViewTextureViewDirToUV(R, viewDir), 0.0f).rgb;
 }
 #endif
-
-
-#if SKYVIEW_READABLE
-Texture2D<float4> SkyViewTexture;
-SamplerState sampler_SkyViewTexture;
-float4 GetSkyView(float R, float3 viewDir)
-{
-	return SkyViewTexture.SampleLevel(sampler_SkyViewTexture, GetSkyViewTextureViewDirToUV(R, viewDir), 0.0f);
-}
-#endif
-

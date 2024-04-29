@@ -93,7 +93,6 @@ namespace Abus.Runtime
         private RenderTexture _SRGBtransmittanceWeightRT;
         private RenderTexture _multipleScatteringLut;
         private RenderTexture _srgbSkyViewLut;
-        private RenderTexture _skyViewLut;
         public RenderTexture SrgbSkyViewLut => _srgbSkyViewLut;
         public RenderTexture SrgbTransmittanceLut => _SRGBtransmittanceRT;
 
@@ -119,16 +118,16 @@ namespace Abus.Runtime
                 RenderTransmittanceLut();
                 RenderMultipleScatteringLut();
                 RenderSkyViewLut();
-                if (bUpdateReadbackBuffer)
-                    RunSceneLightingUpdatePass();
                 RenderSRGBTransmittanceLUT();
-                RenderSRGBSkyViewLUT();
             }
 
             ResolveSRGBTransmittanceLUT();
 
             if (bUpdateReadbackBuffer)
+            {
+                RunSceneLightingUpdatePass();
                 ReadbackRequest = AsyncGPUReadback.Request(ReadbackBuffer, 10 * 16, 0);
+            }
 
             if (forceFlushReadback)
             {
@@ -139,9 +138,7 @@ namespace Abus.Runtime
 
         private AsyncGPUReadbackRequest ReadbackRequest;
         private GraphicsBuffer ReadbackBuffer;
-        [NonSerialized]
         public Vector3 SunDiscIrradiance;
-        [NonSerialized]
         public SphericalHarmonicsL2 SkyIrradiance;
 
         private void OnDestroy()
@@ -214,17 +211,10 @@ namespace Abus.Runtime
 
         private void RunSceneLightingUpdatePass()
         {
-            SceneLightingCS.SetTexture(0, "SkyViewTexture", _skyViewLut);
-            SceneLightingCS.SetTexture(0, "TransmittanceTexture", _transmittanceRT);
+            SceneLightingCS.SetTexture(0, "SrgbSkyViewTexture", _srgbSkyViewLut);
+            SceneLightingCS.SetTexture(0, "SRGBTransmittanceTexture", _SRGBtransmittanceRT);
             SceneLightingCS.SetBuffer(0, "OutReadbackBuffer", ReadbackBuffer);
             SceneLightingCS.Dispatch(0, new Vector3Int(1, 1, 1));
-        }
-
-        private void RenderSRGBSkyViewLUT()
-        {
-            SkyViewCS.SetTexture(1, "OutSrgbSkyColor", _srgbSkyViewLut);
-            SkyViewCS.SetTexture(1, "SpectrumSkyColor", _skyViewLut);
-            SkyViewCS.Dispatch(1, CommonUtils.GetDispatchGroup(skyViewLutSize, new Vector2Int(8, 8)));
         }
 
         private void RenderSRGBTransmittanceLUT()
@@ -298,7 +288,6 @@ namespace Abus.Runtime
             CommonUtils.CreateLUT(ref _SRGBtransmittanceWeightRT, "SRGB Transmittance Weight", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
             CommonUtils.CreateLUT(ref _multipleScatteringLut, "Multiple Scattering", multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1, RenderTextureFormat.ARGBFloat);
             CommonUtils.CreateLUT(ref _srgbSkyViewLut, "Srgb Sky LUT", skyViewLutSize.x, skyViewLutSize.y, 1, RenderTextureFormat.ARGBHalf, TextureWrapMode.Mirror, TextureWrapMode.Clamp);
-            CommonUtils.CreateLUT(ref _skyViewLut, "Sky LUT", skyViewLutSize.x, skyViewLutSize.y, 1, RenderTextureFormat.ARGBHalf, TextureWrapMode.Mirror, TextureWrapMode.Clamp);
 
             return true;
         }
@@ -385,7 +374,8 @@ namespace Abus.Runtime
         {
             SkyViewCS.SetTexture(0, "MultipleScatteringTexture", _multipleScatteringLut);
             SkyViewCS.SetTexture(0, "TransmittanceTexture", _transmittanceRT);
-            SkyViewCS.SetTexture(0, "OutSpectrumSkyColor", _skyViewLut);
+            SkyViewCS.SetTexture(0, "OutSrgbSkyColor", _srgbSkyViewLut);
+            
             SkyViewCS.Dispatch(0, CommonUtils.GetDispatchGroup(skyViewLutSize, new Vector2Int(8, 8)));
         }
         
@@ -511,6 +501,8 @@ namespace Abus.Runtime
             Shader.SetGlobalFloat("CosSunDiscHalfAngle", Mathf.Cos(core.HalfSunAngularDiameterRad));
             Shader.SetGlobalFloat("SunDiscHalfAngle", core.HalfSunAngularDiameterRad);
             Shader.SetGlobalVector("SunCenterSrgbRadiance", core.SRGBSolarIrradiance / (Mathf.PI * core.HalfSunAngularDiameterRad * core.HalfSunAngularDiameterRad));
+            Shader.SetGlobalVector("SunSrgbIrradiance", core.SRGBSolarIrradiance);
+            
             Shader.SetGlobalFloat("dWaveLength", GetWavelengthDW());
             Shader.SetGlobalFloat("NumWavelengths", numWavelengths);
             Shader.SetGlobalFloat("CaptureHeight", captureAltitude + core.PlanetRadius);

@@ -85,21 +85,12 @@ float4 Integrate(float OriginHeight, float3 ViewDir)
 }
 
 RWTexture2D<float4> OutSpectrumSkyColor;
+RWTexture2D<float4> OutSrgbSkyColor;
 
 #pragma kernel MainCS
 [numthreads(8,8,1)]
 void MainCS(uint3 id : SV_DispatchThreadID)
 {
     float3 ViewDir = GetSkyViewTextureUvToViewDir(CaptureHeight, (0.5f + id.xy) * SkyViewTextureSizeAndInvSize.zw);
-    OutSpectrumSkyColor[id.xy] = CurrentIteratingSunIrradiance * Integrate(CaptureHeight, ViewDir);
-}
-
-Texture2D<float4> SpectrumSkyColor;
-RWTexture2D<float4> OutSrgbSkyColor;
-
-#pragma kernel AccumulateSkyViewSrgb
-[numthreads(8,8,1)]
-void AccumulateSkyViewSrgb(uint3 id : SV_DispatchThreadID)
-{
-    OutSrgbSkyColor[id.xy] += float4(dWaveLength * ColorConvertToSRGB(SpectrumSkyColor.Load(uint3(id.xy, 0))), 1.0f);
+    OutSrgbSkyColor[id.xy] += float4(ColorConvertToSRGB(dWaveLength * CurrentIteratingSunIrradiance * Integrate(CaptureHeight, ViewDir)), 0.0f);
 }
