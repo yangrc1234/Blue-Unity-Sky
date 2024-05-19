@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 0
-  m_FogColor: {r: 0.4928226, g: 0.43155116, b: 0.3619572, a: 1}
+  m_FogColor: {r: 0.05175133, g: 0.055595454, b: 0.06443675, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.01
   m_LinearFogStart: 0
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.4928226, g: 0.43155116, b: 0.3619572, a: 1}
+  m_IndirectSpecularColor: {r: 0.05175133, g: 0.055595454, b: 0.06443675, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -289,8 +289,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.50921047, b: 0.12275309, a: 1}
-  m_Intensity: 21.308067
+  m_Color: {r: 1, g: 0.007927188, b: -0.022281054, a: 1}
+  m_Intensity: 0.0033016573
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -348,13 +348,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 180836268}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.026341716, y: 0.72567135, z: -0.12635647, w: -0.67582643}
+  m_LocalRotation: {x: 0.07667325, y: 0.7220902, z: -0.079117835, w: -0.6829696}
   m_LocalPosition: {x: 1.75, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 171.502, y: 86.836, z: -167.799}
+  m_LocalEulerAnglesHint: {x: 179.454, y: 86.871, z: -167.361}
 --- !u!114 &180836271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1503,17 +1503,17 @@ PrefabInstance:
     - target: {fileID: 2923311620115958321, guid: 865d3fd95c4694140a4589adf5757fb1,
         type: 3}
       propertyPath: AerosolComponents.Array.data[0].geometryCrossSection
-      value: 0.008250931
+      value: 0.012376398
       objectReference: {fileID: 0}
     - target: {fileID: 2923311620115958321, guid: 865d3fd95c4694140a4589adf5757fb1,
         type: 3}
       propertyPath: AerosolComponents.Array.data[1].geometryCrossSection
-      value: 0.1332864
+      value: 0.2989424
       objectReference: {fileID: 0}
     - target: {fileID: 2923311620115958321, guid: 865d3fd95c4694140a4589adf5757fb1,
         type: 3}
       propertyPath: AerosolComponents.Array.data[2].geometryCrossSection
-      value: 0.024809862
+      value: 0.1025275
       objectReference: {fileID: 0}
     - target: {fileID: 2923311620115958321, guid: 865d3fd95c4694140a4589adf5757fb1,
         type: 3}
