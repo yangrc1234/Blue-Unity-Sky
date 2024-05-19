@@ -10,16 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fad681b95099421a88142596394d3a98, type: 3}
-  m_Name: MaritimePolluted
+  m_Name: Urban
   m_EditorClassIdentifier: 
   entries:
+  - component: {fileID: 11400000, guid: 322498fdb60179d4088f3a91ae55e4c7, type: 2}
+    NumberPerCM3: 1.5
   - component: {fileID: 11400000, guid: 957397499a5cc6a4e9046941fec0cdc0, type: 2}
-    NumberPerCM3: 3800
-  - component: {fileID: 11400000, guid: 52ea24fbef478f7438d657de478d1626, type: 2}
-    NumberPerCM3: 0.0032
-  - component: {fileID: 11400000, guid: 8f5876ea1f893c543939b496d29a3652, type: 2}
-    NumberPerCM3: 20
+    NumberPerCM3: 28000
   - component: {fileID: 11400000, guid: 0dbee328211d25c4f81f142705592c0d, type: 2}
-    NumberPerCM3: 5180
-  Thickness: 2
-  scaleHeightKM: 1
+    NumberPerCM3: 30000
+  PlanetBoundaryLayerAltitude: 2
+  scaleHeightKM: 8

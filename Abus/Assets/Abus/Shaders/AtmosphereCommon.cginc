@@ -276,7 +276,7 @@ float GetAerosolHeightProfile(float SampleHeight, float HeightProfileInfo, float
     }
 }
 
-#define JE_PHASE_FUNCTION 1
+#define JE_PHASE_FUNCTION 0
 
 void IntegrateMieParticles(float SampleHeight, inout float4 TotalScattering, inout float4 TotalMieExtinction, inout float4 MieLuminance, float VoL)
 {

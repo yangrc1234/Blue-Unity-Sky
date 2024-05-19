@@ -10,16 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fad681b95099421a88142596394d3a98, type: 3}
-  m_Name: Desert
+  m_Name: MaritimeTropical
   m_EditorClassIdentifier: 
   entries:
   - component: {fileID: 11400000, guid: 957397499a5cc6a4e9046941fec0cdc0, type: 2}
-    NumberPerCM3: 2000
-  - component: {fileID: 11400000, guid: 7ac6aaa8bc0606849902a331cd51cc9e, type: 2}
-    NumberPerCM3: 269.5
-  - component: {fileID: 11400000, guid: 2c9b33b5c5d0b714eb253ddc818b09ce, type: 2}
-    NumberPerCM3: 30.5
-  - component: {fileID: 11400000, guid: c92d745b5d579964583565a675cb0712, type: 2}
-    NumberPerCM3: 0.142
-  Thickness: 6
-  scaleHeightKM: 2
+    NumberPerCM3: 590
+  - component: {fileID: 11400000, guid: 52ea24fbef478f7438d657de478d1626, type: 2}
+    NumberPerCM3: 0.0013
+  - component: {fileID: 11400000, guid: 8f5876ea1f893c543939b496d29a3652, type: 2}
+    NumberPerCM3: 0.5
+  PlanetBoundaryLayerAltitude: 2
+  scaleHeightKM: 1

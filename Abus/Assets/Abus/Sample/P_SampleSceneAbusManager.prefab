@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5412899386024140017}
   - component: {fileID: 2923311620115958321}
-  - component: {fileID: 2644939007331481584}
   - component: {fileID: 2713125536555039435}
+  - component: {fileID: 2644939007331481584}
   - component: {fileID: 8962954679026010369}
   m_Layer: 0
   m_Name: P_SampleSceneAbusManager
@@ -51,7 +51,7 @@ MonoBehaviour:
   AtmosphereHeight: 100
   solarIrradianceTable: {fileID: 11400000, guid: b36941fb3f2a1144cbf5834cf3030871,
     type: 2}
-  solarIrradianceScale: 0.1
+  solarIrradianceScale: 1
   boundLight: {fileID: 0}
   sunAngularDiameter: 0.533
   groundAlbedo: {fileID: 11400000, guid: b65af96f71b7eca4f865c9da2862e3fe, type: 2}
@@ -103,7 +103,21 @@ MonoBehaviour:
     geometryCrossSection: 0
     heightType: 0
     scaleHeightKM: 2
-  PlanetBoundaryLayerHeight: 2
+  PlanetBoundaryLayerAltitude: 2
+--- !u!114 &2713125536555039435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4494686326724606607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 525162b870cb45cc825d927e50debbfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OverallIntensity: 1
+  MainProfile: {fileID: 11400000, guid: aa4410291b61b86428c897fad28b690e, type: 2}
 --- !u!114 &2644939007331481584
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -127,20 +141,35 @@ MonoBehaviour:
   UtilShaders: {fileID: 7200000, guid: bb8c2499d4c54dce81efe637326383e7, type: 3}
   SceneLightingCS: {fileID: 7200000, guid: f69da212ebe242c398bdca44550a5844, type: 3}
   numWavelengths: 16
---- !u!114 &2713125536555039435
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4494686326724606607}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 525162b870cb45cc825d927e50debbfe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  OverallIntensity: 1
-  MainProfile: {fileID: 11400000, guid: aa4410291b61b86428c897fad28b690e, type: 2}
+  SunDiscIrradiance: {x: 170.08655, y: 138.88556, z: 113.90348}
+  SkyIrradiance:
+    sh[ 0]: NaN
+    sh[ 1]: NaN
+    sh[ 2]: NaN
+    sh[ 3]: NaN
+    sh[ 4]: 0
+    sh[ 5]: 0
+    sh[ 6]: 0
+    sh[ 7]: 0
+    sh[ 8]: 0
+    sh[ 9]: NaN
+    sh[10]: NaN
+    sh[11]: NaN
+    sh[12]: NaN
+    sh[13]: 0
+    sh[14]: 0
+    sh[15]: 0
+    sh[16]: 0
+    sh[17]: 0
+    sh[18]: NaN
+    sh[19]: NaN
+    sh[20]: NaN
+    sh[21]: NaN
+    sh[22]: 0
+    sh[23]: 0
+    sh[24]: 0
+    sh[25]: 0
+    sh[26]: 0
 --- !u!114 &8962954679026010369
 MonoBehaviour:
   m_ObjectHideFlags: 0

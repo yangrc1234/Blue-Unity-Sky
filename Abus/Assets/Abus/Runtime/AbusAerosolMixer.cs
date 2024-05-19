@@ -60,9 +60,9 @@ namespace Abus.Runtime
                         }
                         core.AerosolComponents[Index].heightType = EAerosolHeightType.PlanetBoundaryLayer;
                         core.AerosolComponents[Index].scaleHeightKM = MainProfile.scaleHeightKM;
-                        var surfaceAreaDistributionGeometryMean = entry.component.GetSurfaceAreaDistributionGeometricMean();
-                        core.AerosolComponents[Index].geometryCrossSection = OverallIntensity * entry.NumberPerCM3 * Mathf.PI * surfaceAreaDistributionGeometryMean * surfaceAreaDistributionGeometryMean * 1e-3f;
-                        core.AerosolComponents[Index].radiusUm = surfaceAreaDistributionGeometryMean;
+                        var meanRadius = entry.component.GetSurfaceAreaDistributionGeometricMean(); // Scattering coefficient is directly related to cross-section area, so we use the mean of surface area distribution.
+                        core.AerosolComponents[Index].geometryCrossSection = OverallIntensity * entry.NumberPerCM3 * Mathf.PI * meanRadius * meanRadius * 1e-3f;
+                        core.AerosolComponents[Index].radiusUm = meanRadius;
                         core.AerosolComponents[Index].radiusGeometricDeviation = entry.component.geometricDeviation;
                         core.AerosolComponents[Index].RefractiveIndex = entry.component.RefractiveIndexData.CalculateValueAtWavelength(550.0f);
                         Index++;

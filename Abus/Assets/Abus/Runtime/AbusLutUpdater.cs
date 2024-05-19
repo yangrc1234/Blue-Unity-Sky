@@ -396,7 +396,7 @@ namespace Abus.Runtime
                 var dw = GetWavelengthDW();
                 var depolarizationFactor = core.CalculateRayleighDepolarizationFactor(wavelength);
                 var airRefractiveIndex = RayleighUtils.GetStandardAirRefractiveIndex(wavelength);
-                var rayleighSeaLevelScatteringCoefficient = RayleighUtils.CalculateRayleighScatteringCoefficientM(wavelength, depolarizationFactor, airRefractiveIndex);
+                var rayleighSeaLevelScatteringCoefficient = RayleighUtils.CalculateRayleighScatteringCoefficientM(wavelength, depolarizationFactor, airRefractiveIndex) * core.RayleighDensityScale;
                 wavelengthCachedValuesList[i].groundAlbedo = core.CalculateGroundAlbedoOfWavelength(wavelength, dw); 
                 wavelengthCachedValuesList[i].rayleighSeaLevelScatteringCoefficient = (float)(rayleighSeaLevelScatteringCoefficient * 1e3);//Convert to /KM
                 wavelengthCachedValuesList[i].rayleighPhaseGamma = depolarizationFactor / (2.0f - depolarizationFactor);
