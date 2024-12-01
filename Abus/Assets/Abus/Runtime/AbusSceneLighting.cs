@@ -37,15 +37,15 @@ namespace Abus.Runtime
         private Material skyboxMaterial;
         public void SetSkybox()
         {
-            if (lutUpdater.SrgbSkyViewLut == null)
+            if (lutUpdater.SRGBSkyViewLut == null)
                 return;
             
             if (skyboxMaterial == null || skyboxMaterial.shader != skyboxShader)
             {
                 skyboxMaterial = new Material(skyboxShader);
             }
-            skyboxMaterial.SetTexture("SrgbSkyViewTexture", lutUpdater.SrgbSkyViewLut);
-            skyboxMaterial.SetTexture("SRGBTransmittanceTexture", lutUpdater.SrgbTransmittanceLut);
+            skyboxMaterial.SetTexture("SRGBSkyViewTexture", lutUpdater.SRGBSkyViewLut);
+            skyboxMaterial.SetTexture("SRGBTransmittanceTexture", lutUpdater.SRGBTransmittanceLut);
             
             RenderSettings.skybox = skyboxMaterial;
         }

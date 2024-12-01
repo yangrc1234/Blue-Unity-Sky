@@ -67,6 +67,7 @@ void IntegrateThroughViewDirection(float OriginHeight, float3 ViewDir, float3 Su
 
 // Stored illuminance of multiple scattering, given sun direction and height. 
 RWTexture2D<float4> OutMultipleScattering;
+RWTexture2D<float4> OutSRGBMultipleScattering;
 
 [numthreads(8,8,1)]
 void MainCS(uint3 id : SV_DispatchThreadID)
@@ -107,5 +108,7 @@ void MainCS(uint3 id : SV_DispatchThreadID)
         }
     }
 
-    OutMultipleScattering[id.xy] = Illuminance / (1.0f - MultiScat);
+    const float4 Result = Illuminance / (1.0f - MultiScat);
+    OutMultipleScattering[id.xy] = Result;
+    OutSRGBMultipleScattering[id.xy] += float4(mul((float3x4)WavelengthToSRGB, dWaveLength * CurrentIteratingSunIrradiance * Result), 0.0f);
 }

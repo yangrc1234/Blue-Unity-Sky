@@ -1,0 +1,63 @@
+﻿#pragma kernel MainCS 
+#pragma kernel IntegrateCS
+
+// Shader for calculating aerial perspective lut. 
+#define TRANSMITTANCE_READABLE 1
+#define MULTIPLE_SCATTERING_READABLE 1
+
+#include "AtmosphereCommon.cginc"
+#include "LutCommon.cginc"
+
+// RGB + Transmittance
+RWTexture3D<float4> OutAerialPerspective;
+RWTexture3D<float4> OutAerialPerspectiveScattering;
+RWTexture3D<float4> OutAerialPerspectiveExtinction;
+
+[numthreads(4, 4, 4)]
+void MainCS(uint3 id : SV_DispatchThreadID)
+{
+    float3 RelativeWorldPosition = GetAerialPerspectiveLutRelativeWorldPosition((0.5f + id) * AerialPerspectiveLutResolutionInv);
+    const float3 ViewDir = normalize(RelativeWorldPosition);
+
+    // Need to clamp sample position above ground height. (Sampling under ground is meaningless apparently..)
+    float2 GroundIntersection;
+    const bool bGroundIntersected = RayIntersectsGround(CaptureHeight, dot(ViewDir, float3(0.0f, 1.0f, 0.0f)), GroundIntersection.x, GroundIntersection.y);
+    if (bGroundIntersected)
+    {
+        RelativeWorldPosition = GroundIntersection.x * normalize(RelativeWorldPosition);
+    }
+
+    float3 SamplePos = float3(0.0f, CaptureHeight, 0.0f) + RelativeWorldPosition;
+    
+    SampleScatteringAtPosition(ViewDir, SamplePos, 1.0f, OutAerialPerspectiveExtinction[id], OutAerialPerspectiveScattering[id]);
+}
+
+Texture3D<float4> AerialPerspectiveScattering;
+Texture3D<float4> AerialPerspectiveExtinction;
+RWTexture3D<float4> OutAerialPerspectiveSRGBLut;
+
+[numthreads(8,8,1)]
+void IntegrateCS(uint3 id : SV_DispatchThreadID)
+{
+    float4 Inscattering = 0.0f;
+    float4 TransmittanceToOrigin = 1.0f;
+    for (int z = 0; z < (int)AerialPerspectiveLutResolution.z; z++)
+    {
+        const float4 Scattering = AerialPerspectiveScattering[uint3(id.xy, z)];
+        const float4 Extinction = AerialPerspectiveExtinction[uint3(id.xy, z)];
+
+        const float BeginDepth = GetAerialPerspectiveSliceDepth((z) * AerialPerspectiveLutResolutionInv.z);
+        const float EndDepth = GetAerialPerspectiveSliceDepth((z + 1) * AerialPerspectiveLutResolutionInv.z);
+        const float StepSize = EndDepth - BeginDepth;
+
+        float4 SampleTransmittance = exp(-Extinction * StepSize);
+        float4 Result = IntegrateWithTransmittance(Extinction, SampleTransmittance, Scattering);
+        TransmittanceToOrigin *= SampleTransmittance;
+        Inscattering += TransmittanceToOrigin * Result;
+
+        const float3 SRGBTransmittanceToOrigin = mul((float3x4)NormalizedWavelengthRGBWeight, TransmittanceToOrigin);
+        const float SRGBGrayTransmittance = dot(SRGBTransmittanceToOrigin, 1.0f / 3.0f);
+
+        OutAerialPerspectiveSRGBLut[uint3(id.xy, z)] += float4(mul((float3x4)WavelengthToSRGB, dWaveLength * CurrentIteratingSunIrradiance * Inscattering), SRGBGrayTransmittance);
+    }
+}

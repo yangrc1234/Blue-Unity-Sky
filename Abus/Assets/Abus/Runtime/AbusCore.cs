@@ -49,7 +49,23 @@ namespace Abus.Runtime
         
         [Header("General")]
         public float PlanetRadius = 6371.0f;
-        public float AtmosphereHeight = 100.0f;
+        
+        /// <summary>
+        /// Above this layer, wind doesn't stop by friction.
+        /// Most aerosols are contained under this layer,
+        ///
+        /// This layer moves up/down based on time of day. For daytime it's thicker due to sun heat up surface.   
+        /// </summary>
+        [Range(0.5f, 3.0f)]
+        public float PlanetBoundaryLayerAltitude;
+        
+        /// <summary>
+        /// Altitude of top cloud,
+        /// Top cloud is much higher than aerosol layer,
+        /// So it's important to take it into account as part of atmosphere.
+        /// </summary>
+        [Range(3.0f, 16.0f)]
+        public float TopCloudAltitude;
         
         /// <summary>
         /// A csv file containing solar irradiance data,
@@ -122,7 +138,25 @@ namespace Abus.Runtime
         [FormerlySerializedAs("Aerosols")] [FormerlySerializedAs("MieParticles")] [Header("Aerosols")]
         public List<InstancedAtmosphereAerosolComponent> AerosolComponents;
 
-        public float PlanetBoundaryLayerAltitude;
+        public float OverallAerosolScale = 1.0f;
+        
+        public bool NormalizeAerosolsInPBL = true;
+
+        public float GetAerosolScale()
+        {
+            if (NormalizeAerosolsInPBL)
+            {
+                return OverallAerosolScale * (1.0f / PlanetBoundaryLayerAltitude);
+            }
+            else
+            {
+                return OverallAerosolScale;
+            }
+        }
+        
+        [Header("Top Cloud")]
+        public float CloudDensity = 0.0f; 
+
         #endregion
         
         #if UNITY_EDITOR
@@ -168,10 +202,25 @@ namespace Abus.Runtime
             ReadAndProcessSolarIrradianceTable();
         }
 
+        public static AbusCore Instance; 
+
         private void OnEnable()
         {
+            if (Instance != null && Instance != this)
+            {
+                Debug.LogError("Multiple AbusCore detected, currently only 1 instance is supported");
+                return;
+            }
+
+            Instance = this;
             initialized = false;
             TryInitialize();
+        }
+
+        private void OnDisable()
+        {
+            if (Instance == this)
+                Instance = null;
         }
 
         #region Sun Irradiance
@@ -207,7 +256,7 @@ namespace Abus.Runtime
                 XYZ += CommonUtils.MapWaveLengthToXYZ(waveLength) * irradiance * dw;
             }
 
-            cachedSRGBSolarIrradiance = CommonUtils.ConvertXyzToSrgb(XYZ);
+            cachedSRGBSolarIrradiance = CommonUtils.ConvertXyzToSRGB(XYZ);
         }
         
         #endregion

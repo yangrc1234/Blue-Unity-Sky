@@ -227,7 +227,7 @@ void MainCS(uint3 id : SV_DispatchThreadID)
 
         const float PDF = SkySample.w;
 
-        float3 SampledSkyRadiance = GetSrgbSkyView(CaptureHeight, SkySample.xyz) / PDF;
+        float3 SampledSkyRadiance = GetSRGBSkyView(CaptureHeight, SkySample.xyz) / PDF;
 
         // Convert to SRGB first.
         const float3 RGBColor = SampledSkyRadiance / (2.0f * PI);
@@ -262,7 +262,7 @@ void MainCS(uint3 id : SV_DispatchThreadID)
         float3 SampleWorldDir = TangentToWorld(ConeSample.xyz, AtmosphereLightDirection);
 
         const float mu = dot(SampleWorldDir, float3(0.0f, 1.0f, 0.0f));
-        float3 SunColor = SunCenterSrgbRadiance * GetSRGBTransmittance(CaptureHeight, mu) * (RayIntersectsGround(CaptureHeight, mu) ? 0.0f : 1.0f);
+        float3 SunColor = SunCenterSRGBRadiance * GetSRGBTransmittance(CaptureHeight, mu) * (RayIntersectsGround(CaptureHeight, mu) ? 0.0f : 1.0f);
 
         float3 SumResult = SumColor(id.x, float4(SunColor, 0.0f) / PDF).rgb / THREAD_NUM;
 

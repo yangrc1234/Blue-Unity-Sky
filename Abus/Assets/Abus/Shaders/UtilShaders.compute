@@ -1,9 +1,17 @@
-﻿RWTexture2D<float4> ClearTarget;
-
-// CS for clearing the LUT to black.
+﻿// CS for clearing the LUT to black.
 #pragma kernel ClearCS
+RWTexture2D<float4> ClearTarget;
+
 [numthreads(8, 8, 1)]
 void ClearCS(uint3 id : SV_DispatchThreadID)
 {
     ClearTarget[id.xy] = 0.0f;
+}
+
+#pragma kernel ClearVolumeCS
+RWTexture3D<float4> ClearVolumeTarget;
+[numthreads(4, 4, 4)]
+void ClearVolumeCS(uint3 id : SV_DispatchThreadID)
+{
+    ClearVolumeTarget[id] = 0.0f;
 }

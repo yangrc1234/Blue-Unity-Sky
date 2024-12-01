@@ -48,7 +48,7 @@ namespace Rcying.Atmosphere
             return new Vector3(xFit_1931(waveLength), yFit_1931(waveLength), zFit_1931(waveLength));
         }
 
-        public static Vector3 ConvertXyzToSrgb(Vector3 XYZ)
+        public static Vector3 ConvertXyzToSRGB(Vector3 XYZ)
         {
             return XyzToSRGB.transpose * XYZ;
         }

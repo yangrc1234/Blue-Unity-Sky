@@ -11,8 +11,16 @@
 #define MULTIPLE_SCATTERING_READABLE 0
 #endif
 
+#ifndef MULTIPLE_SCATTERING_SRGB_READABLE
+#define MULTIPLE_SCATTERING_SRGB_READABLE 0
+#endif
+
 #ifndef SKYVIEW_SRGB_READABLE
 #define SKYVIEW_SRGB_READABLE 0
+#endif
+
+#ifndef AERIAL_PERSPECTIVE_SRGB_READABLE
+#define AERIAL_PERSPECTIVE_SRGB_READABLE 0
 #endif
 
 
@@ -123,6 +131,14 @@ float4 GetMultipleScattering(float r, float cosSunZenith)
 }
 #endif
 
+#if MULTIPLE_SCATTERING_SRGB_READABLE
+Texture2D<float4> SRGBMultipleScatteringTexture;
+SamplerState sampler_SRGBMultipleScatteringTexture;
+float3 GetSRGBMultipleScattering(float r, float cosSunZenith)
+{
+	return SRGBMultipleScatteringTexture.SampleLevel(sampler_SRGBMultipleScatteringTexture, GetMultipleScatteringTextureUvFromRMu(r, cosSunZenith), 0.0f).rgb;
+}
+#endif
 
 /*****************************
  * Sky View Texture
@@ -131,29 +147,26 @@ float4 GetMultipleScattering(float r, float cosSunZenith)
  * 1. Need to be focused around the sun, mie scattering could be super high frequency.
  * 2. Pixels corresponding to horizon, must be aligned in texture space as well.
  * 3. We only consider 1 light source, make full use of this.
+ *
+ * In current implementation, it's a morphed spherical mapping,
+ * More pixels are focused around the sun,
+ * Horizon is moved to more lower part of texture.
 *****************************/
 
 float4 SkyViewTextureSizeAndInvSize;
 float3 SkyViewLutUpDir;
+float4x4 WorldToSkyViewLut;
 
 #define UPPER_PART_FRACTION 0.75	// How many pixels are for above-horizon
 #define SUN_CENTERED_PIXELS 1	// Center more pixels around sun? This helps with strong mie scattering. 
 
 float3 GetSkyViewTextureUvToViewDir(float R, float2 uv)
 {
-	float3 Z = float3(0.0f, 1.0f, 0.0f);
-	float3 X = normalize(cross(SkyViewLutUpDir, Z));
-	float3 Y = cross(X, Z);
-
 	float theta = POW2(uv.x) * PI;
 
 	// Focus pixels around this height.
-	const float sunPhi = acos(dot(float3(0.0f, 1.0f, 0.0f), SkyViewLutUpDir));
-
-	const float horizonPhi = PI - acos(sqrt(R * R - GroundHeight * GroundHeight) / R);
-
-	float sintheta, costheta;
-	sincos(theta, sintheta, costheta);
+	const float sunPhi = FastACos(dot(float3(0.0f, 1.0f, 0.0f), SkyViewLutUpDir));
+	const float horizonPhi = PI - FastACos(sqrt(R * R - GroundHeight * GroundHeight) / R);
 
 	float phi;
 	if (uv.y < UPPER_PART_FRACTION)
@@ -183,30 +196,18 @@ float3 GetSkyViewTextureUvToViewDir(float R, float2 uv)
 		phi = horizonPhi + norm * (PI - horizonPhi);
 	}
 
-	float sinphi, cosphi;
-	sincos(phi, sinphi, cosphi);
-
-	return Z * cosphi + sinphi * -costheta * Y + sinphi * sintheta * X;
+	return GetWorldDirectionFromThetaPhi((float3x3)WorldToSkyViewLut, theta, phi);
 }
 
 float2 GetSkyViewTextureViewDirToUV(float R, float3 ViewDir)
 {
-	// Imagine T-pose looking at the sun,
-	// Z is sun, Y is your head-up, X is your right arm
-	float3 Z = float3(0.0f, 1.0f, 0.0f);
-	float3 X = normalize(cross(SkyViewLutUpDir, Z));
-	float3 Y = cross(X, Z);
-
 	// Focus pixels around this height.
 	const float sunPhi = FastACos(dot(float3(0.0f, 1.0f, 0.0f), SkyViewLutUpDir));
 	
 	const float horizonPhi = PI - acos(sqrt(R * R - GroundHeight * GroundHeight) / R);
 	
-	float phi = FastACos(dot(ViewDir, Z));
-
-	float x = dot(ViewDir, X);
-	float y = dot(ViewDir, -Y);
-	float theta = FastAtan2(x, y);
+	float theta, phi;
+	GetThetaPhiOfDirectionInSystem(ViewDir, (float3x3)WorldToSkyViewLut, theta, phi);
 
 	float U = sqrt(abs(theta / PI));
 	float V;
@@ -252,10 +253,101 @@ float2 GetSkyViewTextureViewDirToUV(float R, float3 ViewDir)
 }
 
 #if SKYVIEW_SRGB_READABLE
-Texture2D<float4> SrgbSkyViewTexture;
-SamplerState sampler_SrgbSkyViewTexture;
-float3 GetSrgbSkyView(float R, float3 viewDir)
+Texture2D<float4> SRGBSkyViewTexture;
+SamplerState sampler_SRGBSkyViewTexture;
+float3 GetSRGBSkyView(float R, float3 viewDir)
 {
-	return SrgbSkyViewTexture.SampleLevel(sampler_SrgbSkyViewTexture, GetSkyViewTextureViewDirToUV(R, viewDir), 0.0f).rgb;
+	return SRGBSkyViewTexture.SampleLevel(sampler_SRGBSkyViewTexture, GetSkyViewTextureViewDirToUV(R, viewDir), 0.0f).rgb;
 }
+#endif
+
+
+
+/***************************************
+ * Aerial Perspective LUT.
+ ***************************************/
+float3 AerialPerspectiveLutResolution;
+float3 AerialPerspectiveLutResolutionInv;
+float2 AerialPerspectiveDepthKMAndInv;
+float4x4 WorldToAerialPerspectiveLut;
+
+// Aerial perspective LUT is spherical mapping,
+// Where top of the sphere points to the sun.
+float3 GetAerialPerspectiveLutUVW(float3 RelativeWorldPositionKM)
+{
+	float theta, phi;
+	const float3 viewDir = normalize(RelativeWorldPositionKM);
+	GetThetaPhiOfDirectionInSystem(viewDir, (float3x3)WorldToAerialPerspectiveLut, theta, phi);
+
+	float U = theta / (2.0f * PI);
+	float V = phi / PI;
+
+	// Non-linear for more pixels when near.
+	float W = sqrt(length(RelativeWorldPositionKM) * AerialPerspectiveDepthKMAndInv.y);
+
+	return float3(U, V, W);
+}
+
+float GetAerialPerspectiveSliceDepth(float W)
+{
+	return POW2(W) * AerialPerspectiveDepthKMAndInv.x;
+}
+
+float3 GetAerialPerspectiveLutRelativeWorldPosition(float3 uvw)
+{
+	float theta = uvw.x * 2.0f * PI;
+	float phi = uvw.y * PI;
+
+	return GetWorldDirectionFromThetaPhi((float3x3)WorldToAerialPerspectiveLut, theta, phi) * GetAerialPerspectiveSliceDepth(uvw.z);
+}
+
+#if AERIAL_PERSPECTIVE_SRGB_READABLE
+Texture3D<float4> AerialPerspectiveSRGBLut;
+SamplerState sampler_AerialPerspectiveSRGBLut;
+
+float3 ApplyAerialPerspective(in float3 InColor, float3 RelativeWorldPositionKM)
+{
+	const float4 Sample = AerialPerspectiveSRGBLut.SampleLevel(sampler_AerialPerspectiveSRGBLut, GetAerialPerspectiveLutUVW(RelativeWorldPositionKM), 0.0f);
+	float3 Scattering = Sample.rgb * SunSRGBIrradiance;
+	float GrayscaleTransmittance = Sample.a;
+
+	return InColor.rgb * GrayscaleTransmittance + Scattering;
+}
+#endif
+
+/***************************************
+ * General functions.
+***************************************/
+#if MULTIPLE_SCATTERING_READABLE && TRANSMITTANCE_READABLE
+
+// Sample extinction/scattering at SamplePos, when viewer is viewing the SamplePos from ViewDir. 
+void SampleScatteringAtPosition(float3 ViewDir, float3 SamplePos, float SunShadow, out float4 OutExtinction, out float4 OutScattering)
+{
+	const float SampleHeight = length(SamplePos);
+	float4 RayleighExt, RayleighScat;
+	RayleighExt = RayleighScat = SampleRayleigh(SampleHeight);
+	const float CosSunZenith = dot(normalize(SamplePos), AtmosphereLightDirection);
+
+	const float4 TransmittanceToSun = SunShadow * (RayIntersectsGround(SampleHeight, CosSunZenith) ? 0.0f : GetTransmittance(SampleHeight, CosSunZenith));
+
+	float4 MultipleScattering = GetMultipleScattering(SampleHeight, CosSunZenith);
+	float4 ScatteringForMS = RayleighScat;
+	float4 MieLuminance = 0.0f;
+	float4 MieExtinctionCoefficient = 0.0f;
+	const float VoL = min(dot(ViewDir, AtmosphereLightDirection), CosSunDiscHalfAngle);
+	IntegrateMieParticles(SampleHeight, ScatteringForMS, MieExtinctionCoefficient, MieLuminance, VoL);
+
+	float4 OZoneAbsorption = SampleOZoneAbsorptionCoefficients(SampleHeight);
+
+	OutScattering = /*UnitIlluminance **/ TransmittanceToSun * (
+			RayleighScat * RayleighPhaseAlt(dot(ViewDir, AtmosphereLightDirection)) +
+			MieLuminance)
+		+ MultipleScattering * ScatteringForMS * IsotropicPhase();
+
+	OutExtinction = RayleighExt + MieExtinctionCoefficient + OZoneAbsorption;
+}
+
+#endif
+#if MULTIPLE_SCATTERING_SRGB_READABLE && TRANSMITTANCE_SRGB_READABLE
+
 #endif

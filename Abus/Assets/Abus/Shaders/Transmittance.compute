@@ -26,8 +26,17 @@ float4 TransmittanceRaymarch(float r, float mu)
 
         TotalExtinctionCoefficient += SampleOZoneAbsorptionCoefficients(SampleHeight);
     }
+
+    // Integrate top cloud.
+    float CloudIntegral = 0.0f;
+    float TopCloudd1, TopCloudd2;
+    if (CloudExtinctionCoefficient > 0.0f && RayIntersectsLayerAtHeight(r, mu, TopCloudAltitude + GroundHeight, TopCloudd1, TopCloudd2))
+    {
+        // TODO: More accurate integration
+        CloudIntegral += CloudExtinctionCoefficient;
+    }
     
-    return exp(-TotalExtinctionCoefficient * StepSize);
+    return exp(-(TotalExtinctionCoefficient * StepSize + CloudIntegral));
 }
 
 RWTexture2D<float4> OutTransmittance;

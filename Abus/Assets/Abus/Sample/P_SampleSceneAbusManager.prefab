@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4494686326724606607}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5088026, y: -0.8011805, z: 0.28913143, w: -0.12503164}
+  m_LocalRotation: {x: 0.50880224, y: -0.80117923, z: 0.28913397, w: -0.12503523}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -48,10 +48,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PlanetRadius: 6371
-  AtmosphereHeight: 100
+  PlanetBoundaryLayerAltitude: 2
+  TopCloudAltitude: 16
   solarIrradianceTable: {fileID: 11400000, guid: b36941fb3f2a1144cbf5834cf3030871,
     type: 2}
-  solarIrradianceScale: 1
+  solarIrradianceScale: 0.1
   boundLight: {fileID: 0}
   sunAngularDiameter: 0.533
   groundAlbedo: {fileID: 11400000, guid: b65af96f71b7eca4f865c9da2862e3fe, type: 2}
@@ -64,35 +65,35 @@ MonoBehaviour:
   oZoneDensityScale: 1
   AerosolComponents:
   - RefractiveIndex:
-      real: 1.53
-      imag: -0.008
-    radiusUm: 2.5623977
-    radiusGeometricDeviation: 2.51
-    geometryCrossSection: 0.012376398
-    heightType: 0
-    scaleHeightKM: 8
-  - RefractiveIndex:
       real: 1.4
       imag: -0.002
     radiusUm: 0.077851854
     radiusGeometricDeviation: 2.24
-    geometryCrossSection: 0.2989424
+    geometryCrossSection: 0.07235548
     heightType: 0
-    scaleHeightKM: 8
+    scaleHeightKM: 1
+  - RefractiveIndex:
+      real: 1.35
+      imag: -0.00000000298
+    radiusUm: 4.7695174
+    radiusGeometricDeviation: 2.03
+    geometryCrossSection: 0.00022869083
+    heightType: 0
+    scaleHeightKM: 1
+  - RefractiveIndex:
+      real: 1.35
+      imag: -0.00000000298
+    radiusUm: 0.5696166
+    radiusGeometricDeviation: 2.03
+    geometryCrossSection: 0.0020386619
+    heightType: 0
+    scaleHeightKM: 1
   - RefractiveIndex:
       real: 1.75
       imag: -0.44
     radiusUm: 0.030845951
     radiusGeometricDeviation: 2
-    geometryCrossSection: 0.1025275
-    heightType: 0
-    scaleHeightKM: 8
-  - RefractiveIndex:
-      real: 1.75
-      imag: -0.44
-    radiusUm: 0.030845951
-    radiusGeometricDeviation: 2
-    geometryCrossSection: 0
+    geometryCrossSection: 0.015483744
     heightType: 0
     scaleHeightKM: 1
   - RefractiveIndex:
@@ -103,7 +104,9 @@ MonoBehaviour:
     geometryCrossSection: 0
     heightType: 0
     scaleHeightKM: 2
-  PlanetBoundaryLayerAltitude: 2
+  OverallAerosolScale: 1
+  NormalizeAerosolsInPBL: 1
+  CloudDensity: 0
 --- !u!114 &2713125536555039435
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -116,8 +119,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 525162b870cb45cc825d927e50debbfe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  OverallIntensity: 1
-  MainProfile: {fileID: 11400000, guid: aa4410291b61b86428c897fad28b690e, type: 2}
+  MainProfile: {fileID: 11400000, guid: c36a67f2451d0ca46b0512eee62b791e, type: 2}
 --- !u!114 &2644939007331481584
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133,38 +135,42 @@ MonoBehaviour:
   skyViewLutSize: {x: 64, y: 96}
   transmittanceTextureSize: {x: 64, y: 128}
   multipleScatteringTextureSize: {x: 32, y: 32}
+  aerialPerspectiveTextureSize: {x: 16, y: 16, z: 64}
+  TraceTopAltitude: 100
   captureAltitude: 0
+  aerialPerspectiveLutDistance: 100
   TransmittanceCS: {fileID: 7200000, guid: bd000332b49fbb94b907a0db5d16e7b3, type: 3}
   MultipleScatteringCS: {fileID: 7200000, guid: 4f2029dc6ccc42c79d8523b075064198,
     type: 3}
   SkyViewCS: {fileID: 7200000, guid: 451358c4051e479d816b4c58645ca093, type: 3}
   UtilShaders: {fileID: 7200000, guid: bb8c2499d4c54dce81efe637326383e7, type: 3}
   SceneLightingCS: {fileID: 7200000, guid: f69da212ebe242c398bdca44550a5844, type: 3}
+  AerialPerspectiveCS: {fileID: 7200000, guid: 00552983926b4c9da52435a1867fe308, type: 3}
   numWavelengths: 16
-  SunDiscIrradiance: {x: 170.08655, y: 138.88556, z: 113.90348}
+  SunDiscIrradiance: {x: 0.358743, y: 0.060183465, z: -0.010701655}
   SkyIrradiance:
-    sh[ 0]: NaN
-    sh[ 1]: NaN
-    sh[ 2]: NaN
-    sh[ 3]: NaN
+    sh[ 0]: 0.021885056
+    sh[ 1]: 0.0129685635
+    sh[ 2]: -0.0030198789
+    sh[ 3]: 0.000098388875
     sh[ 4]: 0
     sh[ 5]: 0
     sh[ 6]: 0
     sh[ 7]: 0
     sh[ 8]: 0
-    sh[ 9]: NaN
-    sh[10]: NaN
-    sh[11]: NaN
-    sh[12]: NaN
+    sh[ 9]: 0.023517914
+    sh[10]: 0.015828714
+    sh[11]: -0.0029772318
+    sh[12]: 0.000061327126
     sh[13]: 0
     sh[14]: 0
     sh[15]: 0
     sh[16]: 0
     sh[17]: 0
-    sh[18]: NaN
-    sh[19]: NaN
-    sh[20]: NaN
-    sh[21]: NaN
+    sh[18]: 0.027249988
+    sh[19]: 0.021521032
+    sh[20]: -0.0028669252
+    sh[21]: 0.00018045818
     sh[22]: 0
     sh[23]: 0
     sh[24]: 0

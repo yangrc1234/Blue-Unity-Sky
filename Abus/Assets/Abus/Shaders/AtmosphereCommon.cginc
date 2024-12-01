@@ -38,7 +38,7 @@ float4 IntegrateWithTransmittance(float4 SampleExtinction, float4 SampleTransmit
     return (ToIntegrate - ToIntegrate * SampleTransmittance) / SampleExtinction;
 }
 
-float4 RayleighPhase(float mu)
+float RayleighPhase(float mu)
 {
     return 3.0 / (16.0 * PI) * (1.0 + mu * mu);
 }
@@ -82,6 +82,36 @@ float3 WavelengthConvertToSRGB(float WavelengthNM)
     return mul(XyzToSRGB, XYZ);
 }
 
+void GetThetaPhiFromDirection(float3 direction, out float theta, out float phi)
+{
+    theta = FastAtan2(direction.y, direction.x);
+    phi = FastACos(direction.z);
+}
+
+void GetThetaPhiOfDirectionInSystem(float3 WorldDir, float3x3 System, out float theta, out float phi)
+{
+    float x = dot(WorldDir, System[0]);
+    float y = dot(WorldDir, System[1]);
+    float z = dot(WorldDir, System[2]);
+
+    GetThetaPhiFromDirection(float3(x, y, z), theta, phi);
+}
+
+float3 GetDirectionFromThetaPhi(float theta, float phi)
+{
+    float sintheta, costheta;
+    sincos(theta, sintheta, costheta);
+    float sinphi, cosphi;
+    sincos(phi, sinphi, cosphi);
+    return float3(sinphi * costheta, sinphi * sintheta, cosphi);
+}
+
+float3 GetWorldDirectionFromThetaPhi(float3x3 System, float theta, float phi)
+{
+    float3 Dir = GetDirectionFromThetaPhi(theta, phi);
+    return System[0] * Dir.x + System[1] * Dir.y + System[2] * Dir.z;
+}
+
 /***************************************
  * Atmosphere Properties.
  ***************************************/
@@ -91,26 +121,33 @@ float AtmosphereHeight; // AtmosphereThicknessAndInv.x + GroundHeight
 float3 AtmosphereLightDirection;
 float CosSunDiscHalfAngle;
 float SunDiscHalfAngle;
-float3 SunCenterSrgbRadiance;
-float3 SunSrgbIrradiance;
+float3 SunCenterSRGBRadiance;
+float3 SunSRGBIrradiance;
 float CaptureHeight;
+float PlanetBoundaryLayerAltitude;
+float TopCloudAltitude;
 
 float ClampRadius(float r) {
     return clamp(r, GroundHeight, AtmosphereHeight);
 }
 
-bool RayIntersectsGround(float r, float mu, out float d_1, out float d_2)
+bool RayIntersectsLayerAtHeight(float r, float mu, float LayerHeight, out float d_1, out float d_2)
 {
     d_1 = 0.0;
     d_2 = 0.0;
     float discriminant = 4 * r * r * (mu * mu - 1.0) +
-        4 * GroundHeight * GroundHeight;
+        4 * LayerHeight * LayerHeight;
     if (discriminant >= 0.0f) {
         float sqDis = sqrt(discriminant);
         d_1 = (-2.0f * r * mu - sqDis) / 2.0f;
         d_2 = (-2.0f * r * mu + sqDis) / 2.0f;
     }
-    return mu < 0.0 && discriminant >= 0.0;
+    return discriminant >= 0.0;
+}
+
+bool RayIntersectsGround(float r, float mu, out float d_1, out float d_2)
+{
+    return mu < 0.0 && RayIntersectsLayerAtHeight(r, mu, GroundHeight, d_1, d_2);
 }
 
 bool RayIntersectsGround(float r, float mu)
@@ -118,10 +155,14 @@ bool RayIntersectsGround(float r, float mu)
     return mu < 0.0 && r * r * (mu * mu - 1.0) + GroundHeight * GroundHeight >= 0.0;
 }
 
-float DistanceToTopAtmosphereBoundary(float r, float mu) {
+float DistanceToLayerAtHeight(float r, float mu, float LayerHeight) {
     float discriminant = r * r * (mu * mu - 1.0) +
-        AtmosphereHeight * AtmosphereHeight;
+        LayerHeight * LayerHeight;
     return ClampDistance(-r * mu + SafeSqrt(discriminant));
+}
+
+float DistanceToTopAtmosphereBoundary(float r, float mu) {
+    return DistanceToLayerAtHeight(r, mu, AtmosphereHeight);
 }
 
 float DistanceToBottomAtmosphereBoundary(float r, float mu)
@@ -161,62 +202,80 @@ bool ResolveRaymarchPath(float OriginHeight, float viewMu, out float IntegrateDi
 /***************************************
  * Iterating Wavelength Parameters.
  ***************************************/
-int CurrentIteratingFirstWavelengthIndex;
-int NumWavelengths;
-float4 CurrentIteratingWavelengthUM;
-float4 CurrentIteratingWavelengthUMInv;
-float4 CurrentIteratingSunIrradiance;
-float4 CurrentIteratingSunRadiance;
-float4x4 NormalizedWavelengthRGBWeight;  // Store RGB weight for each wavelength.
-float4x4 WavelengthToSRGB;  // Translate result of current 4 wavelenght to SRGB.
-float dWaveLength;
 
-float3 WavelengthToXYZ(float4 SpectrumResult)
-{
-    float3 Result = 0.0f;
-    
-    UNITY_UNROLL
-    for (int i = 0; i < 4; i++)
+#ifndef SRGB_SAMPLE_MDOE
+#define SRGB_SAMPLE_MDOE 0
+#endif
+
+#if SRGB_SAMPLE_MDOE
+    // still use float4, float3 will be aligned to 16bytes so really not meaningful..
+    #define SPECTRUM_UNIFORM_PARAMETER(MemberName) uniform float4 SRGB_##MemberName
+    #define GET_SPECTRUM_UNIFORM_VALUE(MemberName) SRGB_##MemberName 
+#else
+    #define SPECTRUM_UNIFORM_PARAMETER(MemberName) uniform float4 MemberName
+    #define GET_SPECTRUM_UNIFORM_VALUE(MemberName) MemberName
+#endif
+
+#if SRGB_SAMPLE_MDOE
+    #define SPECTRUM_SAMPLE float3 
+#else
+    #define SPECTRUM_SAMPLE float4 
+#endif
+
+#if !SRGB_SAMPLE_MDOE
+    int CurrentIteratingFirstWavelengthIndex;
+    int NumWavelengths;
+    float4 CurrentIteratingWavelengthUM;
+    float4 CurrentIteratingWavelengthUMInv;
+    float4 CurrentIteratingSunIrradiance;
+    float4 CurrentIteratingSunRadiance;
+    float4 GroundSpectrumAlbedo;
+    float4x4 NormalizedWavelengthRGBWeight;  // Store RGB weight for each wavelength.
+    float4x4 WavelengthToSRGB;  // Translate result of current 4 wavelenght to SRGB.
+    float dWaveLength;
+
+    float3 WavelengthToXYZ(float4 SpectrumResult)
     {
-        if (CurrentIteratingWavelengthUM[i] == 0.0f)
-            continue;
-        float3 XYZ;
-        XYZ.x = xFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
-        XYZ.y = yFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
-        XYZ.z = zFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
-        Result += SpectrumResult[i] * XYZ;
+        float3 Result = 0.0f;
+        
+        UNITY_UNROLL
+        for (int i = 0; i < 4; i++)
+        {
+            if (CurrentIteratingWavelengthUM[i] == 0.0f)
+                continue;
+            float3 XYZ;
+            XYZ.x = xFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
+            XYZ.y = yFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
+            XYZ.z = zFit_1931(1e3 * CurrentIteratingWavelengthUM[i]);
+            Result += SpectrumResult[i] * XYZ;
+        }
+
+        return Result;
     }
 
-    return Result;
-}
-
-float3 ColorConvertToSRGB(float4 SpectrumResult)
-{
-    return mul(XyzToSRGB, WavelengthToXYZ(SpectrumResult));
-}
-
-/***************************************
- * Ground Properties.
- ***************************************/
-float4 GroundSpectrumAlbedo;
+    float3 ColorConvertToSRGB(float4 SpectrumResult)
+    {
+        return mul(XyzToSRGB, WavelengthToXYZ(SpectrumResult));
+    }
+#endif
 
 /***************************************
  * Rayleigh Properties.
  ***************************************/
 
 // Ext of current iterating 4 spectrum.
-float4 RayleighSeaLevelSpectrumScatteringCoefficient;
-float4 RayleighSpectrumPhaseFunctionGamma;
+SPECTRUM_UNIFORM_PARAMETER(RayleighSeaLevelSpectrumScatteringCoefficient);
+SPECTRUM_UNIFORM_PARAMETER(RayleighSpectrumPhaseFunctionGamma);
 float RayleighScaleHeight;
 
-float4 RayleighPhaseAlt(float mu)
+SPECTRUM_SAMPLE RayleighPhaseAlt(float mu)
 {
-    return 3.0 / (16.0 * PI * (1 + 2 * RayleighSpectrumPhaseFunctionGamma)) * ((1 + 3.0 * RayleighSpectrumPhaseFunctionGamma) + (1 - RayleighSpectrumPhaseFunctionGamma) * mu * mu);
+    return 3.0 / (16.0 * PI * (1 + 2 * GET_SPECTRUM_UNIFORM_VALUE(RayleighSpectrumPhaseFunctionGamma))) * ((1 + 3.0 * GET_SPECTRUM_UNIFORM_VALUE(RayleighSpectrumPhaseFunctionGamma)) + (1 - GET_SPECTRUM_UNIFORM_VALUE(RayleighSpectrumPhaseFunctionGamma)) * mu * mu);
 }
 
-float4 SampleRayleigh(float Height)
+SPECTRUM_SAMPLE SampleRayleigh(float Height)
 {
-    return RayleighSeaLevelSpectrumScatteringCoefficient * GetScaleHeight(Height - GroundHeight, RayleighScaleHeight);
+    return GET_SPECTRUM_UNIFORM_VALUE(RayleighSeaLevelSpectrumScatteringCoefficient) * GetScaleHeight(Height - GroundHeight, RayleighScaleHeight);
 }
 
 /***************************************
@@ -225,7 +284,6 @@ float4 SampleRayleigh(float Height)
 Texture2D<float4> MieProperties;
 Texture2D<float4> MieWavelengthLut;
 int NumMieTypes;
-float PlanetBoundaryLayerAltitude;
 #define PLANET_BOUNDARY_LAYER_FADE_HEIGHT 1.5
 
 #include "JEPhaseFunction.cginc"
@@ -334,9 +392,9 @@ float OZoneLowerDensity;
 float OZoneStratosphereMidDensity;
 float OZoneStratosphereTopDensity;
 float OZoneUpperHeightScale;
-float4 OZoneAbsorptionCrossSection;
+SPECTRUM_UNIFORM_PARAMETER(OZoneAbsorptionCrossSection);
 
-float4 SampleOZoneAbsorptionCoefficients(float SampleHeight)
+SPECTRUM_SAMPLE SampleOZoneAbsorptionCoefficients(float SampleHeight)
 {
     const float Altitude = SampleHeight - GroundHeight;
     float Density = 0.0f;
@@ -359,3 +417,11 @@ float4 SampleOZoneAbsorptionCoefficients(float SampleHeight)
 
     return Density * OZoneAbsorptionCrossSection * 1e3f; // Convert to km^-1
 }
+
+
+/***************************************
+ * Cloud Properties.
+ ***************************************/
+float CloudExtinctionCoefficient;   // Assume cloud albedo is purely white, only extinction required.
+float4 CloudPhaseParams;
+float CloudAltitude;

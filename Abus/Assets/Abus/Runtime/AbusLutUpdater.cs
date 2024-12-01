@@ -19,8 +19,13 @@ namespace Abus.Runtime
         public Vector2Int skyViewLutSize = new Vector2Int(128, 128);
         public Vector2Int transmittanceTextureSize = new Vector2Int(512, 64);
         public Vector2Int multipleScatteringTextureSize = new Vector2Int(64, 64);
+        public Vector3Int aerialPerspectiveTextureSize = new Vector3Int(16, 16, 64);
+        [Range(80.0f, 100.0f)]
+        public float TraceTopAltitude = 100.0f;
         [Range(0.0f, 30.0f)]
         public float captureAltitude = 0.0f;
+        [Range(0.0f, 300.0f)]
+        public float aerialPerspectiveLutDistance = 100.0f;
 
         [Header("Compute Shaders")]
         public ComputeShader TransmittanceCS;
@@ -28,6 +33,7 @@ namespace Abus.Runtime
         public ComputeShader SkyViewCS;
         public ComputeShader UtilShaders;
         public ComputeShader SceneLightingCS;
+        public ComputeShader AerialPerspectiveCS;
         
         [Header("Spectrum Rendering")]
         [SerializeField] private int numWavelengths = 8;
@@ -37,6 +43,7 @@ namespace Abus.Runtime
 
         private bool initialized = false;
         private AbusCore core;
+        
         protected virtual void InitializeIfNot()
         {
             if (initialized)
@@ -47,8 +54,16 @@ namespace Abus.Runtime
 
         private void ClearRT(RenderTexture Target)
         {
-            UtilShaders.SetTexture(0, "ClearTarget",  Target);
-            UtilShaders.Dispatch(0, CommonUtils.GetDispatchGroup(new Vector2Int(Target.width, Target.height), new Vector2Int(8, 8)));
+            if (Target.volumeDepth > 1)
+            {
+                UtilShaders.SetTexture(1, "ClearVolumeTarget",  Target);
+                UtilShaders.Dispatch(1, CommonUtils.GetDispatchGroup(new Vector3Int(Target.width, Target.height, Target.volumeDepth), new Vector3Int(4, 4, 4)));
+            }
+            else
+            {
+                UtilShaders.SetTexture(0, "ClearTarget",  Target);
+                UtilShaders.Dispatch(0, CommonUtils.GetDispatchGroup(new Vector2Int(Target.width, Target.height), new Vector2Int(8, 8)));
+            }
         }
 
         public float GetIterateWavelengthNM(int Index)
@@ -86,14 +101,31 @@ namespace Abus.Runtime
                 return;
             }
             DoRenderLuts(forceFlushReadback);
+
+            SetupGlobalSRGBTextures();
+        }
+
+        private void SetupGlobalSRGBTextures()
+        {
+            Shader.SetGlobalTexture("SRGBSkyViewTexture", SRGBSkyViewLut);
+            Shader.SetGlobalTexture("SRGBAerialPerspectiveLut", SRGBAerialPerspectiveLut);
+            Shader.SetGlobalTexture("SRGBTransmittanceTexture", SRGBTransmittanceLut);
+            Shader.SetGlobalTexture("SRGBMultipleScatteringTexture", SRGBMultipleScatteringLut);
         }
 
         private RenderTexture _transmittanceRT;
         private RenderTexture _srgbtransmittanceRT;
         private RenderTexture _multipleScatteringLut;
+        private RenderTexture _srgbMultipleScatteringLut;
         private RenderTexture _srgbSkyViewLut;
-        public RenderTexture SrgbSkyViewLut => _srgbSkyViewLut;
-        public RenderTexture SrgbTransmittanceLut => _srgbtransmittanceRT;
+        private RenderTexture _aerialPerspectiveScattering;
+        private RenderTexture _aerialPerspectiveExtinction;
+        private RenderTexture _srgbAerialPerspectiveLut;
+        
+        public RenderTexture SRGBSkyViewLut => _srgbSkyViewLut;
+        public RenderTexture SRGBAerialPerspectiveLut => _srgbAerialPerspectiveLut;
+        public RenderTexture SRGBTransmittanceLut => _srgbtransmittanceRT;
+        public RenderTexture SRGBMultipleScatteringLut => _srgbMultipleScatteringLut;
 
         public void DoRenderLuts(bool forceFlushReadback = false)
         {
@@ -106,6 +138,8 @@ namespace Abus.Runtime
             // Clear sky view LUT.
             ClearRT(_srgbSkyViewLut);
             ClearRT(_srgbtransmittanceRT);
+            ClearRT(_srgbMultipleScatteringLut);
+            ClearRT(_srgbAerialPerspectiveLut);
 
             if (bUpdateReadbackBuffer)
                 ClearReadbackBuffer();
@@ -116,6 +150,7 @@ namespace Abus.Runtime
                 RenderTransmittanceLut();
                 RenderMultipleScatteringLut();
                 RenderSkyViewLut();
+                RenderAerialPerspectiveLut();
             }
 
             if (bUpdateReadbackBuffer)
@@ -206,7 +241,7 @@ namespace Abus.Runtime
 
         private void RunSceneLightingUpdatePass()
         {
-            SceneLightingCS.SetTexture(0, "SrgbSkyViewTexture", _srgbSkyViewLut);
+            SceneLightingCS.SetTexture(0, "SRGBSkyViewTexture", _srgbSkyViewLut);
             SceneLightingCS.SetTexture(0, "SRGBTransmittanceTexture", _srgbtransmittanceRT);
             SceneLightingCS.SetBuffer(0, "OutReadbackBuffer", ReadbackBuffer);
             SceneLightingCS.Dispatch(0, new Vector3Int(1, 1, 1));
@@ -248,31 +283,45 @@ namespace Abus.Runtime
             // Update settings based on dirty flags.
             if (DirtyFlags.HasFlag(EDirtyFlags.Atmosphere))
             {
-                miePropertiesLut = null;
+                MiePropertiesLut = null;
+                MieWavelengthLut = null;
             }
 
             if (DirtyFlags.HasFlag(EDirtyFlags.Atmosphere) || DirtyFlags.HasFlag(EDirtyFlags.Wavelength))
             {
                 ApplyWavelengthSettings();
                 MieWavelengthLut = null;
+                ApplyCloudSettings();
             }
             
             if (!MieWavelengthLut) MieWavelengthLut = CreateMieWavelengthLut();
-            if (!miePropertiesLut) miePropertiesLut = CreateMiePropertiesLut();
+            if (!MiePropertiesLut) MiePropertiesLut = CreateMiePropertiesLut();
             
             DirtyFlags = 0;
 
             // After testing, half/full-precision produces nearly no difference.  
             CommonUtils.CreateLUT(ref _transmittanceRT, "Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
-            CommonUtils.CreateLUT(ref _srgbtransmittanceRT, "Srgb Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
+            CommonUtils.CreateLUT(ref _srgbtransmittanceRT, "SRGB Transmittance", transmittanceTextureSize.x, transmittanceTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
             CommonUtils.CreateLUT(ref _multipleScatteringLut, "Multiple Scattering", multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
-            CommonUtils.CreateLUT(ref _srgbSkyViewLut, "Srgb Sky LUT", skyViewLutSize.x, skyViewLutSize.y, 1, RenderTextureFormat.ARGBHalf, TextureWrapMode.Mirror, TextureWrapMode.Clamp);
+            CommonUtils.CreateLUT(ref _srgbMultipleScatteringLut, "SRGB Multiple Scattering", multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1, RenderTextureFormat.ARGBHalf);
+            CommonUtils.CreateLUT(ref _srgbSkyViewLut, "SRGB Sky LUT", skyViewLutSize.x, skyViewLutSize.y, 1, RenderTextureFormat.ARGBHalf, TextureWrapMode.Mirror, TextureWrapMode.Clamp);
+            CommonUtils.CreateLUT(ref _aerialPerspectiveScattering, "Aerial Perspective Scattering", aerialPerspectiveTextureSize.x, aerialPerspectiveTextureSize.y, aerialPerspectiveTextureSize.z, RenderTextureFormat.ARGBHalf, TextureWrapMode.Repeat, TextureWrapMode.Clamp);
+            CommonUtils.CreateLUT(ref _aerialPerspectiveExtinction, "Aerial Perspective Extinction", aerialPerspectiveTextureSize.x, aerialPerspectiveTextureSize.y, aerialPerspectiveTextureSize.z, RenderTextureFormat.ARGBHalf, TextureWrapMode.Repeat, TextureWrapMode.Clamp);
+            CommonUtils.CreateLUT(ref _srgbAerialPerspectiveLut, "SRGB Aerial Perspective LUT", aerialPerspectiveTextureSize.x, aerialPerspectiveTextureSize.y, aerialPerspectiveTextureSize.z, RenderTextureFormat.ARGBHalf, TextureWrapMode.Repeat, TextureWrapMode.Clamp);
 
             return true;
         }
 
+        private float CloudExtinctionCoefficient;
+        private Vector4 CloudPhaseParams;
+        private void ApplyCloudSettings()
+        {
+            CloudExtinctionCoefficient = core.CloudDensity; // Assume all wavelength has same extinction coefficient for cloud, just use density as coefficient.
+            CloudPhaseParams = MieUtils.JEPhaseParams(5.0f);    // Assume top layer cloud particles to be this size. 
+        }
+
         public Texture2D MieWavelengthLut { get; private set; }
-        public Texture2D miePropertiesLut { get; private set; }
+        public Texture2D MiePropertiesLut { get; private set; }
 
         Texture2D CreateMieWavelengthLut()
         {
@@ -331,7 +380,7 @@ namespace Abus.Runtime
             for (int iMieType = 0; iMieType < core.AerosolComponents.Count; iMieType++)
             {
                 var radius = core.AerosolComponents[iMieType].radiusUm;
-                var geometryCrossSectionKM = core.AerosolComponents[iMieType].geometryCrossSection;
+                var geometryCrossSectionKM = core.AerosolComponents[iMieType].geometryCrossSection * core.GetAerosolScale();
 
                 float HeightProfileInfo = (int)core.AerosolComponents[iMieType].heightType;
                 lut.SetPixel(iMieType, 0, new Vector4(geometryCrossSectionKM, HeightProfileInfo, 0.0f, core.AerosolComponents[iMieType].scaleHeightKM));
@@ -346,6 +395,7 @@ namespace Abus.Runtime
         {
             MultipleScatteringCS.SetTexture(0, "OutMultipleScattering", _multipleScatteringLut);
             MultipleScatteringCS.SetTexture(0, "TransmittanceTexture", _transmittanceRT);
+            MultipleScatteringCS.SetTexture(0, "OutSRGBMultipleScattering", _srgbMultipleScatteringLut);
             MultipleScatteringCS.Dispatch(0, CommonUtils.GetDispatchGroup(multipleScatteringTextureSize, new Vector2Int(8, 8)));
         }
         
@@ -353,7 +403,7 @@ namespace Abus.Runtime
         {
             SkyViewCS.SetTexture(0, "MultipleScatteringTexture", _multipleScatteringLut);
             SkyViewCS.SetTexture(0, "TransmittanceTexture", _transmittanceRT);
-            SkyViewCS.SetTexture(0, "OutSrgbSkyColor", _srgbSkyViewLut);
+            SkyViewCS.SetTexture(0, "OutSRGBSkyColor", _srgbSkyViewLut);
             
             SkyViewCS.Dispatch(0, CommonUtils.GetDispatchGroup(skyViewLutSize, new Vector2Int(8, 8)));
         }
@@ -363,6 +413,31 @@ namespace Abus.Runtime
             TransmittanceCS.SetTexture(0, "OutTransmittance", _transmittanceRT);
             TransmittanceCS.SetTexture(0, "OutSRGBTransmittance", _srgbtransmittanceRT);
             TransmittanceCS.Dispatch(0, CommonUtils.GetDispatchGroup(transmittanceTextureSize, new Vector2Int(8, 8)));
+        }
+
+        private void RenderAerialPerspectiveLut()
+        {
+            // Ensure the compute shader and render texture are initialized
+            if (AerialPerspectiveCS == null || _aerialPerspectiveScattering == null)
+            {
+                Debug.LogError("Aerial Perspective Compute Shader or Render Texture is not assigned.");
+                return;
+            }
+
+            // Set the necessary parameters for the compute shader
+            AerialPerspectiveCS.SetTexture(0, "MultipleScatteringTexture", _multipleScatteringLut);
+            AerialPerspectiveCS.SetTexture(0, "TransmittanceTexture", _transmittanceRT);
+            AerialPerspectiveCS.SetTexture(0, "OutAerialPerspectiveScattering", _aerialPerspectiveScattering);
+            AerialPerspectiveCS.SetTexture(0, "OutAerialPerspectiveExtinction", _aerialPerspectiveExtinction);
+            AerialPerspectiveCS.Dispatch(0, CommonUtils.GetDispatchGroup(aerialPerspectiveTextureSize, new Vector3Int(4, 4, 4)));
+
+            // Integration pass.
+            AerialPerspectiveCS.SetTexture(1, "MultipleScatteringTexture", _multipleScatteringLut);
+            AerialPerspectiveCS.SetTexture(1, "TransmittanceTexture", _transmittanceRT);
+            AerialPerspectiveCS.SetTexture(1, "AerialPerspectiveScattering", _aerialPerspectiveScattering);
+            AerialPerspectiveCS.SetTexture(1, "AerialPerspectiveExtinction", _aerialPerspectiveExtinction);
+            AerialPerspectiveCS.SetTexture(1, "OutAerialPerspectiveSRGBLut", _srgbAerialPerspectiveLut);
+            AerialPerspectiveCS.Dispatch(1, CommonUtils.GetDispatchGroup(new Vector3Int(aerialPerspectiveTextureSize.x, aerialPerspectiveTextureSize.y, 1), new Vector3Int(8, 8, 1)));
         }
 
         struct IteratingWavelengthCachedValues
@@ -402,7 +477,7 @@ namespace Abus.Runtime
                 wavelengthCachedValuesList[i].rayleighPhaseGamma = depolarizationFactor / (2.0f - depolarizationFactor);
                 wavelengthCachedValuesList[i].solarIrradiance = core.CalculateAverageIrradianceOfWavelength(wavelength, dw);
                 wavelengthCachedValuesList[i].ozoneAbsorptionCrossSection = core.CalculateOZoneAbsorptionCrossSectionM2(wavelength, dw);
-                wavelengthCachedValuesList[i].RGBWeight = CommonUtils.ConvertXyzToSrgb(CommonUtils.MapWaveLengthToXYZ(GetIterateWavelengthNM(i)));
+                wavelengthCachedValuesList[i].RGBWeight = CommonUtils.ConvertXyzToSRGB(CommonUtils.MapWaveLengthToXYZ(GetIterateWavelengthNM(i)));
             }
             
             // Normalize rgb weight. 
@@ -464,8 +539,6 @@ namespace Abus.Runtime
             Shader.SetGlobalVector("RayleighSpectrumPhaseFunctionGamma", RayleighPhaseFunctionGamma);
             
             Shader.SetGlobalVector("OZoneAbsorptionCrossSection", OZoneAbsorptionCrossSection);          
-            
-            Shader.SetGlobalVector("OZoneAbsorptionCrossSection", OZoneAbsorptionCrossSection);
         }
 
         protected virtual Vector3 GetLightDirection()
@@ -483,28 +556,65 @@ namespace Abus.Runtime
             Vector3 lightDirection = GetLightDirection();
             Shader.SetGlobalVector("AtmosphereLightDirection", lightDirection);
             
-            Shader.SetGlobalVector("AtmosphereThicknessAndInv", new Vector4(core.AtmosphereHeight, 1.0f / core.AtmosphereHeight, 0.0f, 0.0f));
+            Shader.SetGlobalVector("AtmosphereThicknessAndInv", new Vector4(TraceTopAltitude, 1.0f / TraceTopAltitude, 0.0f, 0.0f));
             Shader.SetGlobalFloat("GroundHeight", core.PlanetRadius);
-            Shader.SetGlobalFloat("AtmosphereHeight", core.PlanetRadius + core.AtmosphereHeight);
+            Shader.SetGlobalFloat("AtmosphereHeight", core.PlanetRadius + TraceTopAltitude);
             Shader.SetGlobalVector("TransmittanceTextureSizeInvSize", new Vector4(transmittanceTextureSize.x, transmittanceTextureSize.y, 1.0f / transmittanceTextureSize.x, 1.0f / transmittanceTextureSize.y));
             Shader.SetGlobalVector("MultipleScatteringTextureSizeInvSize", new Vector4(multipleScatteringTextureSize.x, multipleScatteringTextureSize.y, 1.0f / multipleScatteringTextureSize.x, 1.0f / multipleScatteringTextureSize.y));
-            Shader.SetGlobalVector("SkyViewTextureSizeAndInvSize", new Vector4(skyViewLutSize.x, skyViewLutSize.y, 1.0f / skyViewLutSize.x, 1.0f / skyViewLutSize.y));
 
-            var zenithAngle = Mathf.Acos(Vector3.Dot(Vector3.up, lightDirection));
-            if (zenithAngle > Mathf.Deg2Rad * 88.0f)
-            {
-                // Rotate the light direction to avoid singularity.
-                lightDirection = Quaternion.AngleAxis(zenithAngle * Mathf.Rad2Deg - 88.0f, Vector3.Cross(Vector3.up, -lightDirection)) * lightDirection;
+            // Skyview LUT.
+            {   
+                Shader.SetGlobalVector("SkyViewTextureSizeAndInvSize", new Vector4(skyViewLutSize.x, skyViewLutSize.y, 1.0f / skyViewLutSize.x, 1.0f / skyViewLutSize.y));
+                var zenithAngle = Mathf.Acos(Vector3.Dot(Vector3.up, lightDirection));
+                var rotatedLightDirection = lightDirection;
+                if (zenithAngle > Mathf.Deg2Rad * 88.0f)
+                {
+                    // Rotate the light direction to avoid singularity.
+                    rotatedLightDirection = Quaternion.AngleAxis(zenithAngle * Mathf.Rad2Deg - 88.0f, Vector3.Cross(Vector3.up, -lightDirection)) * lightDirection;
+                }
+                Shader.SetGlobalVector("SkyViewLutUpDir", rotatedLightDirection);
+
+                Matrix4x4 WorldToSkyViewLut = Matrix4x4.identity;
+                
+                // Z points to zenith
+                Vector3 Z = Vector3.up;
+                // Y points to right arm side if you look at sun.
+                Vector3 Y = rotatedLightDirection == Z ? Vector3.right : Vector3.Cross(rotatedLightDirection, Vector3.up).normalized;
+                // X points to light direction projected on horizon
+                Vector3 X = Vector3.Cross(Z, Y);
+                WorldToSkyViewLut.SetRow(0, X);
+                WorldToSkyViewLut.SetRow(1, Y);
+                WorldToSkyViewLut.SetRow(2, Z);
+                Shader.SetGlobalMatrix("WorldToSkyViewLut", WorldToSkyViewLut);
             }
-            Shader.SetGlobalVector("SkyViewLutUpDir", lightDirection);
+            
+            // Aerial Perspective LUT
+            {
+                Shader.SetGlobalVector("AerialPerspectiveLutResolution", new Vector4(aerialPerspectiveTextureSize.x, aerialPerspectiveTextureSize.y, aerialPerspectiveTextureSize.z, 0.0f));
+                Shader.SetGlobalVector("AerialPerspectiveLutResolutionInv", new Vector4(1.0f / aerialPerspectiveTextureSize.x, 1.0f / aerialPerspectiveTextureSize.y, 1.0f / aerialPerspectiveTextureSize.z, 0.0f));
+                Shader.SetGlobalVector("AerialPerspectiveDepthKMAndInv", new Vector4(aerialPerspectiveLutDistance, 1.0f / aerialPerspectiveLutDistance, 0.0f, 0.0f));
+                
+                Matrix4x4 worldToAerialPerspectiveLut = Matrix4x4.identity;
+                // X points to light direction projected on horizon
+                Vector3 X = lightDirection;
+                // Y points to right arm side if you look at sun.
+                Vector3 Y = lightDirection == Vector3.up ? Vector3.right : Vector3.Cross(lightDirection, Vector3.up).normalized;
+                // Z points to head-up when looking at sun.
+                Vector3 Z = Vector3.Cross(Y, X);
+                worldToAerialPerspectiveLut.SetRow(0, X);
+                worldToAerialPerspectiveLut.SetRow(1, Y);
+                worldToAerialPerspectiveLut.SetRow(2, Z);
+                Shader.SetGlobalMatrix("WorldToAerialPerspectiveLut", worldToAerialPerspectiveLut);
+            }
+            
 
             Shader.SetGlobalFloat("RayleighScaleHeight", core.RayleighScaleHeight);
 
-            Shader.SetGlobalTexture("MieProperties", miePropertiesLut);
+            Shader.SetGlobalTexture("MieProperties", MiePropertiesLut);
             Shader.SetGlobalTexture("MieWavelengthLut", MieWavelengthLut);
             Shader.SetGlobalInteger("NumMieTypes", core.AerosolComponents.Count);
             Shader.SetGlobalFloat("PlanetBoundaryLayerAltitude", core.PlanetBoundaryLayerAltitude);
-            
+            Shader.SetGlobalFloat("TopCloudAltitude", core.TopCloudAltitude);
             
             Shader.SetGlobalFloat("OZoneLowerDensity", core.OZoneLowerDensity);
             Shader.SetGlobalFloat("OZoneStratosphereMidDensity", core.OZoneStratosphereMidDensity);
@@ -513,12 +623,17 @@ namespace Abus.Runtime
 
             Shader.SetGlobalFloat("CosSunDiscHalfAngle", Mathf.Cos(core.HalfSunAngularDiameterRad));
             Shader.SetGlobalFloat("SunDiscHalfAngle", core.HalfSunAngularDiameterRad);
-            Shader.SetGlobalVector("SunCenterSrgbRadiance", core.SRGBSolarIrradiance / (Mathf.PI * core.HalfSunAngularDiameterRad * core.HalfSunAngularDiameterRad));
-            Shader.SetGlobalVector("SunSrgbIrradiance", core.SRGBSolarIrradiance);
+            Shader.SetGlobalVector("SunCenterSRGBRadiance", core.SRGBSolarIrradiance / (Mathf.PI * core.HalfSunAngularDiameterRad * core.HalfSunAngularDiameterRad));
+            Shader.SetGlobalVector("SunSRGBIrradiance", core.SRGBSolarIrradiance);
             
             Shader.SetGlobalFloat("dWaveLength", GetWavelengthDW());
             Shader.SetGlobalFloat("NumWavelengths", numWavelengths);
             Shader.SetGlobalFloat("CaptureHeight", captureAltitude + core.PlanetRadius);
+            
+            Shader.SetGlobalFloat("CloudExtinctionCoefficient", CloudExtinctionCoefficient);
+            Shader.SetGlobalFloat("CloudAltitude", core.TopCloudAltitude);
+            Shader.SetGlobalVector("CloudPhaseParams", CloudPhaseParams);
+            
         }
     }
 }

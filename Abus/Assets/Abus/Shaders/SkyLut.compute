@@ -9,33 +9,15 @@
 
 void IntegrateStep(float3 ViewDir, float3 SamplePos, const float StepSize, inout float4 LuminanceIntegral, inout float4 TransmittanceToOrigin)
 {
-    const float SampleHeight = length(SamplePos);
-    float4 RayleighExt, RayleighScat;
-    RayleighExt = RayleighScat = SampleRayleigh(SampleHeight);
-    const float CosSunZenith = dot(normalize(SamplePos), AtmosphereLightDirection);
+    float4 Scattering;
+    float4 Extinction;
+    SampleScatteringAtPosition(ViewDir, SamplePos, 1.0f, Extinction, Scattering);
 
-    const float4 TransmittanceToSun = RayIntersectsGround(SampleHeight, CosSunZenith) ? 0.0f : GetTransmittance(SampleHeight, CosSunZenith);
-
-    float4 MultipleScattering = GetMultipleScattering(SampleHeight, CosSunZenith);
-    float4 ScatteringForMS = RayleighScat;
-    float4 MieLuminance = 0.0f;
-    float4 MieExtinctionCoefficient = 0.0f;
-    const float VoL = min(dot(ViewDir, AtmosphereLightDirection), CosSunDiscHalfAngle);
-    IntegrateMieParticles(SampleHeight, ScatteringForMS, MieExtinctionCoefficient, MieLuminance, VoL);
-
-    float4 OZoneAbsorption = SampleOZoneAbsorptionCoefficients(SampleHeight);
-
-    float4 ToIntegrate;
-    ToIntegrate = /*UnitIlluminance **/ TransmittanceToSun * (
-            RayleighScat * RayleighPhaseAlt(dot(ViewDir, AtmosphereLightDirection)) +
-            MieLuminance)
-        + MultipleScattering * ScatteringForMS * IsotropicPhase();
-
-    float4 SampleTransmittance = exp(-StepSize * (RayleighExt + MieExtinctionCoefficient));
+    float4 SampleTransmittance = exp(-StepSize * Extinction);
     LuminanceIntegral += TransmittanceToOrigin * IntegrateWithTransmittance(
-        RayleighExt + MieExtinctionCoefficient + OZoneAbsorption,
+        Extinction,
         SampleTransmittance,
-        ToIntegrate
+        Scattering
     );
 
     TransmittanceToOrigin *= SampleTransmittance;
@@ -45,6 +27,9 @@ void IntegrateStep(float3 ViewDir, float3 SamplePos, const float StepSize, inout
 float4 Integrate(float OriginHeight, float3 ViewDir)
 {
     const float mu = dot(ViewDir, float3(0.0, 1.0, 0.0));
+    
+    float TopCloudd1, TopCloudd2;
+    const bool bCrossTopCloud = RayIntersectsLayerAtHeight(OriginHeight, mu, TopCloudAltitude + GroundHeight, TopCloudd1, TopCloudd2);
     
     float IntegrateDistance;
     const bool bGroundIntersected = ResolveRaymarchPath(OriginHeight, mu, IntegrateDistance);
@@ -63,6 +48,9 @@ float4 Integrate(float OriginHeight, float3 ViewDir)
         const float3 SamplePos = float3(0.0f, OriginHeight, 0.0f) + (iStep + 0.5f) * Step;
         const float3 SampleEnd = float3(0.0f, OriginHeight, 0.0f) + (iStep + 1.0f) * Step;
 
+        const float DistanceStart = iStep * StepSize;
+        const float DistanceEnd = (iStep + 1) * StepSize;
+
         // Take more samples when crossing the boundary layer.
         bool bCrossingPlanetBoundaryLayer = (abs((length(SamplePos) - GroundHeight) - PlanetBoundaryLayerAltitude) < PLANET_BOUNDARY_LAYER_FADE_HEIGHT * 3.0f) || (length(SampleStart) - GroundHeight > PlanetBoundaryLayerAltitude) != (length(SampleEnd) - GroundHeight > PlanetBoundaryLayerAltitude); 
 
@@ -79,13 +67,31 @@ float4 Integrate(float OriginHeight, float3 ViewDir)
         {
             IntegrateStep(ViewDir, SamplePos, StepSize, LuminanceIntegral, TransmittanceToOrigin);
         }
+
+        if (CloudExtinctionCoefficient > 0.0f)
+        {
+            int CloudTraceCount = 0;
+            if (DistanceStart < TopCloudd1 && DistanceEnd > TopCloudd1)
+                CloudTraceCount++;
+            if (DistanceStart < TopCloudd2 && DistanceEnd > TopCloudd2)
+                CloudTraceCount++;
+            
+            if (CloudTraceCount > 0)
+            {
+                // Extra integration for cloud.
+                const float Phase = SimpleMiePhaseFunction(0.6f, dot(ViewDir, AtmosphereLightDirection));
+                LuminanceIntegral += IntegrateWithTransmittance(CloudExtinctionCoefficient, exp(-CloudExtinctionCoefficient), CloudExtinctionCoefficient * Phase * GetTransmittance(length(SamplePos), dot(ViewDir, AtmosphereLightDirection)));
+                // LuminanceIntegral += CloudExtinctionCoefficient * Phase;
+                TransmittanceToOrigin *= exp(-CloudExtinctionCoefficient);
+            }
+        }
     }
 
     return LuminanceIntegral;
 }
 
 RWTexture2D<float4> OutSpectrumSkyColor;
-RWTexture2D<float4> OutSrgbSkyColor;
+RWTexture2D<float4> OutSRGBSkyColor;
 
 #pragma kernel MainCS
 [numthreads(8,8,1)]
@@ -93,5 +99,5 @@ void MainCS(uint3 id : SV_DispatchThreadID)
 {
     float3 ViewDir = GetSkyViewTextureUvToViewDir(CaptureHeight, (0.5f + id.xy) * SkyViewTextureSizeAndInvSize.zw);
     const float4 SpectrumResult = dWaveLength * CurrentIteratingSunIrradiance * Integrate(CaptureHeight, ViewDir);
-    OutSrgbSkyColor[id.xy] += float4(mul((float3x4)WavelengthToSRGB, SpectrumResult), 0.0f);
+    OutSRGBSkyColor[id.xy] += float4(mul((float3x4)WavelengthToSRGB, SpectrumResult), 0.0f);
 }

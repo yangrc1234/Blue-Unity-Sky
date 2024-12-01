@@ -2,7 +2,6 @@ Shader "Unlit/AbusSampleSkybox"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
     }
     SubShader
     {
@@ -22,10 +21,10 @@ Shader "Unlit/AbusSampleSkybox"
             
             #include "LutCommon.cginc"
             #include "AtmosphereCommon.cginc"
-            
+             
             struct appdata
             {
-                float4 positionOS   : POSITION;      
+                float4 positionOS   : POSITION;
             };
 
             struct v2f
@@ -62,14 +61,14 @@ Shader "Unlit/AbusSampleSkybox"
                     if (mu > CosSunDiscHalfAngle && !RayIntersectsGround(R, viewMu))
                     {
                         const float3 Transmittance = GetSRGBTransmittance(R, viewMu);
-                        Color.rgb += Transmittance * SunCenterSrgbRadiance;
+                        Color.rgb += Transmittance * SunCenterSRGBRadiance;
 
                         const float LimbDarkening = (1.0f - 0.6f * (1.0f - sqrt(1.0 - POW2(FastACos(mu) / SunDiscHalfAngle))));
                         Color.rgb *= LimbDarkening;
                     }
                 }
 
-                Color.rgb += GetSrgbSkyView(R, ViewDir).rgb;
+                Color.rgb += GetSRGBSkyView(R, ViewDir).rgb;
                 
             	return float4(Color.rgb, 1.0f);
             }
